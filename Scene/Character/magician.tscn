@@ -1,0 +1,29 @@
+[gd_scene format=3 uid="uid://dtfl3ya8p8suk"]
+
+[ext_resource type="Script" uid="uid://dloh6plnfxinw" path="res://Script/Character/magician.gd" id="1_dvv7r"]
+[ext_resource type="Texture2D" uid="uid://bb4q5a0nvsla3" path="res://GameResource/Charater/magician.png" id="1_ehrmo"]
+[ext_resource type="PackedScene" uid="uid://cgw3ud1ufry1p" path="res://Scene/Character/weapon/magic_circle.tscn" id="2_8sv7u"]
+[ext_resource type="Texture2D" uid="uid://do4ovoyxbu22p" path="res://GameResource/Charater/wand.png" id="2_ko1vg"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_ehrmo"]
+radius = 51.0
+height = 186.0
+
+[node name="Magician" type="CharacterBody2D" unique_id=1706584919]
+z_index = 2
+script = ExtResource("1_dvv7r")
+
+[node name="magic_circle" parent="." unique_id=824185184 instance=ExtResource("2_8sv7u")]
+position = Vector2(2, -92)
+
+[node name="Wand" type="Sprite2D" parent="." unique_id=1692157446]
+position = Vector2(69, -3)
+texture = ExtResource("2_ko1vg")
+
+[node name="Magician" type="Sprite2D" parent="." unique_id=445249484]
+position = Vector2(1, 0)
+texture = ExtResource("1_ehrmo")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=589334419]
+position = Vector2(3, 25)
+shape = SubResource("CapsuleShape2D_ehrmo")

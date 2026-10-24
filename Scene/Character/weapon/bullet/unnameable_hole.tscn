@@ -1,0 +1,33 @@
+[gd_scene format=3 uid="uid://cpng7qmuecy8o"]
+
+[ext_resource type="Texture2D" uid="uid://dbolxnabyucs7" path="res://GameResource/curtain.png" id="1_lwvwr"]
+[ext_resource type="Script" uid="uid://b64wx7o83subj" path="res://Script/Character/Weapon/Bullet/unnameable_hole.gd" id="1_u2ynf"]
+[ext_resource type="Texture2D" uid="uid://qguhevmwnos7" path="res://GameResource/Charater/zhaohualianxi.png" id="2_u2ynf"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bhunq"]
+size = Vector2(793, 1647)
+
+[node name="unnameable_hole" type="Area2D" unique_id=2029267899]
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_u2ynf")
+
+[node name="Curtain" type="Sprite2D" parent="." unique_id=805784608]
+modulate = Color(0.19076231, 0.19076234, 0.19076231, 0.36078432)
+position = Vector2(436, 882)
+scale = Vector2(0.7734375, 0.7734375)
+texture = ExtResource("1_lwvwr")
+
+[node name="Zhaohualianxi2" type="Sprite2D" parent="Curtain" unique_id=106793440]
+position = Vector2(55.59595, -1519.1919)
+scale = Vector2(3.8769922, 3.8769922)
+texture = ExtResource("2_u2ynf")
+
+[node name="Zhaohualianxi" type="Sprite2D" parent="Curtain" unique_id=395948547]
+position = Vector2(-146.10101, -2067.394)
+scale = Vector2(11.625593, 11.625593)
+texture = ExtResource("2_u2ynf")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1783589317]
+position = Vector2(370.5, 813.5)
+shape = SubResource("RectangleShape2D_bhunq")

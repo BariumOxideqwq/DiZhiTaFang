@@ -1,0 +1,61 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Script/UI/tutorial_panel.gd" id="1_tut"]
+
+[node name="TutorialPanel" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_tut")
+
+[node name="Banner" type="Panel" parent="."]
+layout_mode = 1
+offset_left = 30.0
+offset_top = 24.0
+offset_right = 690.0
+offset_bottom = 236.0
+mouse_filter = 2
+
+[node name="Title" type="Label" parent="Banner"]
+layout_mode = 0
+offset_left = 18.0
+offset_top = 12.0
+offset_right = 520.0
+offset_bottom = 56.0
+theme_override_font_sizes/font_size = 26
+text = "基本操作"
+
+[node name="Body" type="Label" parent="Banner"]
+layout_mode = 0
+offset_left = 18.0
+offset_top = 62.0
+offset_right = 660.0
+offset_bottom = 152.0
+theme_override_font_sizes/font_size = 20
+text = "说明"
+autowrap_mode = 3
+
+[node name="NextButton" type="Button" parent="Banner"]
+layout_mode = 0
+offset_left = 540.0
+offset_top = 148.0
+offset_right = 660.0
+offset_bottom = 208.0
+theme_override_font_sizes/font_size = 22
+text = "下一步"
+
+[node name="SkipButton" type="Button" parent="Banner"]
+layout_mode = 0
+offset_left = 548.0
+offset_top = 10.0
+offset_right = 672.0
+offset_bottom = 50.0
+theme_override_font_sizes/font_size = 16
+text = "跳过引导"
+
+[connection signal="pressed" from="Banner/NextButton" to="." method="_on_next_button_pressed"]
+[connection signal="pressed" from="Banner/SkipButton" to="." method="_on_skip_button_pressed"]

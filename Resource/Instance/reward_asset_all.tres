@@ -1,0 +1,196 @@
+[gd_resource type="Resource" script_class="rewards_arr" format=3 uid="uid://fedevop0l3cx"]
+
+[ext_resource type="Script" uid="uid://dy3c0eqwhu8a" path="res://Resource/Reward_info.gd" id="1_pfdmg"]
+[ext_resource type="Script" uid="uid://bsa61j6xq8rmj" path="res://Resource/Rewards_arr.gd" id="2_twhg6"]
+
+[sub_resource type="Resource" id="Resource_pfdmg"]
+script = ExtResource("1_pfdmg")
+name = "恢复城墙血量"
+context = "提升城墙血量1点"
+metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
+
+[sub_resource type="Resource" id="Resource_t5flk"]
+script = ExtResource("1_pfdmg")
+name = "（弓箭手）提升箭矢伤害"
+context = "提升箭矢伤害，上限为INT_MAX"
+metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
+
+[sub_resource type="Resource" id="Resource_twhg6"]
+script = ExtResource("1_pfdmg")
+name = "（弓箭手）提升攻速"
+context = "提升攻速I级"
+metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
+
+[sub_resource type="Resource" id="Resource_yvpo3"]
+script = ExtResource("1_pfdmg")
+name = "（弓箭手）连续散射"
+context = "散射多次
+拥有此技能时，
+则增加散射次数"
+metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
+
+[sub_resource type="Resource" id="Resource_3jm2q"]
+script = ExtResource("1_pfdmg")
+name = "（弓箭手）额外箭矢"
+context = "额外射出一发箭矢"
+metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
+
+[sub_resource type="Resource" id="Resource_s1foa"]
+script = ExtResource("1_pfdmg")
+name = "（弓箭手）穿透"
+context = "额外2名穿透单位"
+metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
+
+[sub_resource type="Resource" id="Resource_w2gux"]
+script = ExtResource("1_pfdmg")
+name = "（弓箭手）狙击"
+context = "狙击瞄准最近
+的一名敌人，
+若该敌人的生命低于（15%/20%/25%）
+则将其斩杀，
+否则，造成其
+最大生命值
+（10%/15%/20%）
+的伤害"
+metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
+
+[sub_resource type="Resource" id="Resource_qlqwh"]
+script = ExtResource("1_pfdmg")
+name = "（弓箭手）残殇"
+context = "攻击附带目标当前（5/7/9%）的
+生命值和攻击附带目标当前（5/7/9%）已损失的
+生命值"
+metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
+
+[sub_resource type="Resource" id="Resource_2cexh"]
+script = ExtResource("1_pfdmg")
+name = "（法师）提升伤害"
+context = "提升十点伤害"
+metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
+
+[sub_resource type="Resource" id="Resource_y0rtj"]
+script = ExtResource("1_pfdmg")
+name = "（法师）提升攻击速度"
+context = "提升攻击速度"
+metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
+
+[sub_resource type="Resource" id="Resource_wshwn"]
+script = ExtResource("1_pfdmg")
+name = "（法师）电击"
+context = "召唤一道闪电劈向最近的敌人"
+metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
+
+[sub_resource type="Resource" id="Resource_1wb2c"]
+script = ExtResource("1_pfdmg")
+name = "（法师）炼狱之路"
+context = "在路径上随机生成多个火焰区域，持续灼烧敌人"
+metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
+
+[sub_resource type="Resource" id="Resource_oyhuo"]
+script = ExtResource("1_pfdmg")
+name = "（法师）雪虐风饕"
+context = "召唤大雪，持续对敌人造成伤害和减速"
+metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
+
+[sub_resource type="Resource" id="Resource_1cqc6"]
+script = ExtResource("1_pfdmg")
+name = "（法师）风卷残云"
+context = "召唤多道大风，穿透并击退敌人"
+metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
+
+[sub_resource type="Resource" id="Resource_5n28g"]
+script = ExtResource("1_pfdmg")
+name = "（召唤师）提升伤害"
+context = "提升召唤物一号的伤害"
+metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
+
+[sub_resource type="Resource" id="Resource_ostif"]
+script = ExtResource("1_pfdmg")
+name = "（召唤师）此岸渡蚀"
+context = "召唤一条裂隙，这条裂隙将在场上随机移动，对碰撞到的敌人造成伤害，如果敌人生命低于一定水平(10%/15%/20%/25%/30%)则将其斩杀
+同时升级此技能还可以增加大小和速度"
+metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
+
+[sub_resource type="Resource" id="Resource_gp7aw"]
+script = ExtResource("1_pfdmg")
+name = "（召唤师）溶原增殖"
+context = "当己方单位击败敌方单位时，召唤一名新的临时单位，升级此技能可以增强新单位的强度
+（上限99只）"
+metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
+
+[sub_resource type="Resource" id="Resource_wltfh"]
+script = ExtResource("1_pfdmg")
+name = "（召唤师）行炁淬锋"
+context = "每隔一段时间，治疗场上己方单位，并暂时增强他们"
+metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
+
+[sub_resource type="Resource" id="Resource_sg3ll"]
+script = ExtResource("1_pfdmg")
+name = "（召唤师）负向幻觉"
+context = "召唤不可名状的生物，悄悄将场上随机单位传送到出生点或其他位置，并有一定概率抹除（5%/10%/15%）"
+metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
+
+[sub_resource type="Resource" id="Resource_soir6"]
+script = ExtResource("1_pfdmg")
+name = "（弓箭手）淬锋之矢"
+context = "现在的箭矢命中敌人后将会叠加流血效果，最高叠加三层，随时间掉落层数"
+metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
+
+[sub_resource type="Resource" id="Resource_atspd"]
+script = ExtResource("1_pfdmg")
+name = "（召唤师）提升攻速"
+context = "召唤物攻击间隔缩短15%（连续获取可叠加）"
+metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
+
+[sub_resource type="Resource" id="Resource_wpn_acquire"]
+script = ExtResource("1_pfdmg")
+name = "（武器）原初飞刀"
+context = "获得武器：每隔一段时间朝前方投掷一把飞刀，造成伤害"
+metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
+
+[sub_resource type="Resource" id="Resource_wpn_dmg"]
+script = ExtResource("1_pfdmg")
+name = "（原初飞刀）利刃"
+context = "飞刀伤害提升15点"
+metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
+
+[sub_resource type="Resource" id="Resource_wpn_spd"]
+script = ExtResource("1_pfdmg")
+name = "（原初飞刀）疾投"
+context = "飞刀投掷间隔缩短15%"
+metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
+
+[sub_resource type="Resource" id="Resource_wpn_power"]
+script = ExtResource("1_pfdmg")
+name = "（原初飞刀）原初之力"
+context = "飞刀命中时额外造成目标最大生命值3%/6%/9%的伤害"
+metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
+
+[sub_resource type="Resource" id="Resource_wpn_echo"]
+script = ExtResource("1_pfdmg")
+name = "（原初飞刀）原初回响"
+context = "飞刀命中后向两侧分裂出2把残影飞刀，造成40%/55%/70%伤害（残影不再分裂）"
+metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
+
+[sub_resource type="Resource" id="Resource_wpn_archer"]
+script = ExtResource("1_pfdmg")
+name = "（弓箭手）原初同调"
+context = "飞刀攻速变为50%投掷速度+50%弓箭射速，且使用散射时也会投出飞刀"
+metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
+
+[sub_resource type="Resource" id="Resource_wpn_mage"]
+script = ExtResource("1_pfdmg")
+name = "（法师）淬火刀锋"
+context = "每隔一段时间，下一把飞刀命中敌人时在命中处触发一次炼狱之路"
+metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
+
+[sub_resource type="Resource" id="Resource_wpn_summoner"]
+script = ExtResource("1_pfdmg")
+name = "（召唤师）永葬秘法"
+context = "每隔一段时间，若此岸渡蚀存在，则从裂隙位置向四周连续投掷飞刀3秒"
+metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
+
+[resource]
+script = ExtResource("2_twhg6")
+reward_list = Array[ExtResource("1_pfdmg")]([SubResource("Resource_pfdmg"), SubResource("Resource_t5flk"), SubResource("Resource_twhg6"), SubResource("Resource_yvpo3"), SubResource("Resource_3jm2q"), SubResource("Resource_s1foa"), SubResource("Resource_w2gux"), SubResource("Resource_qlqwh"), SubResource("Resource_2cexh"), SubResource("Resource_y0rtj"), SubResource("Resource_wshwn"), SubResource("Resource_1wb2c"), SubResource("Resource_oyhuo"), SubResource("Resource_1cqc6"), SubResource("Resource_5n28g"), SubResource("Resource_ostif"), SubResource("Resource_gp7aw"), SubResource("Resource_wltfh"), SubResource("Resource_sg3ll"), SubResource("Resource_soir6"), SubResource("Resource_atspd"), SubResource("Resource_wpn_acquire"), SubResource("Resource_wpn_dmg"), SubResource("Resource_wpn_spd"), SubResource("Resource_wpn_power"), SubResource("Resource_wpn_echo"), SubResource("Resource_wpn_archer"), SubResource("Resource_wpn_mage"), SubResource("Resource_wpn_summoner")])
+metadata/_custom_type_script = "uid://bsa61j6xq8rmj"

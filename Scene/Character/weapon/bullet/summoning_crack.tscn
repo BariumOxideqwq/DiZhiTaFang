@@ -1,0 +1,35 @@
+[gd_scene format=3 uid="uid://cg3ij86pwh0v4"]
+
+[ext_resource type="Script" uid="uid://hblstuscwryq" path="res://Script/Character/Weapon/Bullet/summoning_crack.gd" id="1_g4ews"]
+[ext_resource type="Texture2D" uid="uid://bjcptj3b2gqx0" path="res://GameResource/Charater/hole.png" id="2_g4ews"]
+
+[node name="summoning_crack" type="Area2D" unique_id=1279821918]
+modulate = Color(1, 1, 1, 0.7490196)
+scale = Vector2(0.75, 0.75)
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_g4ews")
+
+[node name="Hole2" type="Sprite2D" parent="." unique_id=984975958]
+modulate = Color(1, 1, 1, 0.19607843)
+position = Vector2(-1.3333334, 30.666664)
+texture = ExtResource("2_g4ews")
+
+[node name="effect" type="Timer" parent="." unique_id=687650126]
+wait_time = 1.5
+autostart = true
+
+[node name="Hole" type="Sprite2D" parent="." unique_id=1310543648]
+position = Vector2(-0.6666667, 1.3333334)
+texture = ExtResource("2_g4ews")
+
+[node name="collision_shape" type="CollisionPolygon2D" parent="." unique_id=686770625]
+polygon = PackedVector2Array(-104.66667, -76, 2, -84, 128, -72.66667, 212.66667, -34.666668, 257.33334, 3.3333335, 279.33334, 66, 262, 116, 215.33334, 150, 164.66667, 182.66667, 39.333336, 201.33334, -2, 198, -110, 194.66667, -188.66667, 168, -267.33334, 126, -280.6667, 59.333336, -267.33334, 13.333334, -233.33334, -33.333336, -172.66667, -56.666668)
+
+[node name="lifetimer" type="Timer" parent="." unique_id=547205959]
+wait_time = 15.0
+autostart = true
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]
+[connection signal="timeout" from="effect" to="." method="_on_timer_timeout"]
+[connection signal="timeout" from="lifetimer" to="." method="_on_lifetimer_timeout"]

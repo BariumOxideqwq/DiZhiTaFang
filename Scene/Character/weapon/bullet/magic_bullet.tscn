@@ -1,0 +1,96 @@
+[gd_scene format=3 uid="uid://cnehu81xh83e6"]
+
+[ext_resource type="Texture2D" uid="uid://d4k51shd2eshx" path="res://GameResource/Charater/bullet/magic_ball.png" id="1_ehj7g"]
+[ext_resource type="Script" uid="uid://dhud6s175t6xh" path="res://Script/Character/Weapon/Bullet/magic_bullet.gd" id="1_lhm5w"]
+[ext_resource type="Texture2D" uid="uid://bqct31s5xit18" path="res://GameResource/Charater/bullet/thunder_ball.png" id="2_lhm5w"]
+[ext_resource type="Texture2D" uid="uid://b4fnl1t6ivc87" path="res://GameResource/Charater/bullet/ice_ball.png" id="3_uarht"]
+[ext_resource type="Texture2D" uid="uid://dq2nec8m5vqof" path="res://GameResource/Charater/bullet/fireball.png" id="4_b6nwo"]
+[ext_resource type="Texture2D" uid="uid://ic8hbt8arljm" path="res://GameResource/Charater/bullet/wind_sprite.png" id="5_jn8cf"]
+
+[sub_resource type="Animation" id="Animation_lhm5w"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [0]
+}
+
+[sub_resource type="Animation" id="Animation_uarht"]
+resource_name = "normal"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.23333333, 0.53333336),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [0, 1, 2]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_b6nwo"]
+_data = {
+&"RESET": SubResource("Animation_lhm5w"),
+&"normal": SubResource("Animation_uarht")
+}
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_ehj7g"]
+radius = 16.27882
+
+[node name="Magic_bullet" type="Area2D" unique_id=1964651444]
+top_level = true
+z_index = 3
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_lhm5w")
+
+[node name="MagicBall" type="Sprite2D" parent="." unique_id=26554690]
+visible = false
+position = Vector2(0, 2)
+scale = Vector2(1.578125, 1.5011433)
+texture = ExtResource("1_ehj7g")
+
+[node name="ThunderBall" type="Sprite2D" parent="." unique_id=492237176]
+visible = false
+position = Vector2(0, 2)
+scale = Vector2(1.3125, 1.34375)
+texture = ExtResource("2_lhm5w")
+
+[node name="IceBall" type="Sprite2D" parent="." unique_id=860106641]
+visible = false
+position = Vector2(9.536743e-07, 1.9999995)
+rotation = 1.3583455
+scale = Vector2(1.3871664, 1.3871664)
+texture = ExtResource("3_uarht")
+
+[node name="Fireball" type="Sprite2D" parent="." unique_id=1955770896]
+visible = false
+position = Vector2(1, -2.3841858e-07)
+rotation = 1.5903684
+scale = Vector2(1.2228208, 1.2011554)
+texture = ExtResource("4_b6nwo")
+
+[node name="WindSprite" type="Sprite2D" parent="." unique_id=1289611324]
+visible = false
+position = Vector2(-1, 5.000001)
+scale = Vector2(0.6875, 0.65625)
+texture = ExtResource("5_jn8cf")
+hframes = 3
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="WindSprite" unique_id=1715638817]
+libraries/ = SubResource("AnimationLibrary_b6nwo")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=323067102]
+position = Vector2(0, 3)
+shape = SubResource("CircleShape2D_ehj7g")
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]

@@ -1,0 +1,75 @@
+[gd_scene format=3 uid="uid://dsius4s52bn05"]
+
+[ext_resource type="Script" uid="uid://hliexadca8i5" path="res://Script/Enemy/slime.gd" id="1_ch6ln"]
+[ext_resource type="Texture2D" uid="uid://c1jnutjowqerb" path="res://GameResource/Enemy/slime_sprite.png" id="1_f4vvn"]
+[ext_resource type="Texture2D" uid="uid://b35kq5ehrswog" path="res://GameResource/shadow.png" id="2_ch6ln"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_uwkaq"]
+radius = 44.0
+
+[sub_resource type="Animation" id="Animation_f4vvn"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [1]
+}
+
+[sub_resource type="Animation" id="Animation_ch6ln"]
+resource_name = "walk"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.26666668, 0.3, 0.33333334, 0.36666667, 0.40000004, 0.43333337),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1),
+"update": 1,
+"values": [1, 2, 3, 2, 1, 1, 0]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_uwkaq"]
+_data = {
+&"RESET": SubResource("Animation_f4vvn"),
+&"walk": SubResource("Animation_ch6ln")
+}
+
+[node name="slime" type="CharacterBody2D" unique_id=494482110]
+top_level = true
+collision_layer = 2
+collision_mask = 2
+script = ExtResource("1_ch6ln")
+
+[node name="Shadow" type="Sprite2D" parent="." unique_id=189559618]
+position = Vector2(3, 23)
+scale = Vector2(1.8125, 1.640625)
+texture = ExtResource("2_ch6ln")
+
+[node name="SlimeSprite" type="Sprite2D" parent="." unique_id=260532970]
+position = Vector2(3, 1)
+texture = ExtResource("1_f4vvn")
+hframes = 4
+frame = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1333182463]
+position = Vector2(0, 2)
+shape = SubResource("CircleShape2D_uwkaq")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=2128053648]
+root_node = NodePath("../SlimeSprite")
+libraries/ = SubResource("AnimationLibrary_uwkaq")
+
+[node name="Show_HP" type="Label" parent="." unique_id=1062816860]
+offset_left = -18.0
+offset_top = -48.0
+offset_right = 22.0
+offset_bottom = -25.0

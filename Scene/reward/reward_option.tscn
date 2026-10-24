@@ -1,0 +1,39 @@
+[gd_scene load_steps=2 format=3 uid="uid://dc16tue6wqx02"]
+
+[ext_resource type="Script" uid="uid://bmuymh486u8d8" path="res://Script/reward/reward_option.gd" id="1_5jcw7"]
+
+[node name="Reward_option" type="Button" unique_id=616137927]
+offset_right = 460.0
+offset_bottom = 240.0
+script = ExtResource("1_5jcw7")
+
+[node name="Content" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 18.0
+offset_top = 12.0
+offset_right = -18.0
+offset_bottom = -12.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="Name" type="Label" parent="Content"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "奖励"
+autowrap_mode = 3
+
+[node name="Desc" type="Label" parent="Content"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 15
+text = "说明"
+autowrap_mode = 3
+
+[connection signal="button_down" from="." to="." method="_on_button_down"]
+[connection signal="mouse_entered" from="." to="." method="_on_mouse_entered"]
+[connection signal="mouse_exited" from="." to="." method="_on_mouse_exited"]

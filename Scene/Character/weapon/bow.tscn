@@ -1,0 +1,41 @@
+[gd_scene format=3 uid="uid://d4epe01ws0m1u"]
+
+[ext_resource type="Script" uid="uid://b0orr4l3qw12s" path="res://Script/Character/Weapon/bow.gd" id="1_o4kbi"]
+[ext_resource type="Texture2D" uid="uid://c0lo5sier433a" path="res://GameResource/Charater/bow.png" id="1_scw2q"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_o4kbi"]
+radius = 2945.375
+
+[node name="Bow" type="Node2D" unique_id=1570404091]
+script = ExtResource("1_o4kbi")
+
+[node name="Bow_sprite" type="Sprite2D" parent="." unique_id=773922582]
+position = Vector2(53, -5)
+rotation = 1.5707964
+texture = ExtResource("1_scw2q")
+offset = Vector2(0, 37)
+
+[node name="Marker2D" type="Marker2D" parent="." unique_id=1245902092]
+position = Vector2(49, -4)
+
+[node name="Timer" type="Timer" parent="." unique_id=351441507]
+autostart = true
+
+[node name="Sanshe_timer" type="Timer" parent="." unique_id=619225221]
+wait_time = 5.0
+autostart = true
+
+[node name="Detect_Enemies" type="Area2D" parent="." unique_id=293518103]
+collision_layer = 0
+collision_mask = 2
+
+[node name="Detect_Shape" type="CollisionShape2D" parent="Detect_Enemies" unique_id=884025626]
+shape = SubResource("CircleShape2D_o4kbi")
+
+[node name="Kill_line" type="Timer" parent="." unique_id=729268071]
+wait_time = 3.0
+autostart = true
+
+[connection signal="timeout" from="Timer" to="." method="_on_timer_timeout"]
+[connection signal="timeout" from="Sanshe_timer" to="." method="_on_sanshe_timer_timeout"]
+[connection signal="timeout" from="Kill_line" to="." method="_on_kill_line_timeout"]

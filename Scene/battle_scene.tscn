@@ -1,0 +1,108 @@
+[gd_scene format=3 uid="uid://xhdi7ngj7j0e"]
+
+[ext_resource type="Texture2D" uid="uid://u5ohcswog1nx" path="res://GameResource/Charater/backgrond.png" id="1_md0br"]
+[ext_resource type="Script" uid="uid://dl17om6qqsihg" path="res://Script/battle_scene.gd" id="1_uk2p2"]
+[ext_resource type="Texture2D" uid="uid://cqh07pxct03px" path="res://GameResource/Charater/wall.png" id="2_j1wa3"]
+[ext_resource type="Script" uid="uid://cbtjio61ct8mk" path="res://Script/characer_creator.gd" id="4_3kdla"]
+[ext_resource type="Script" uid="uid://bgmfimso6c05r" path="res://Script/enemies_creator_creator.gd" id="5_3kdla"]
+[ext_resource type="Script" uid="uid://kiqiargshy13" path="res://Script/battle_ui.gd" id="5_r36lf"]
+[ext_resource type="Script" uid="uid://c37sbwqrr7q10" path="res://Script/reward/reward_creator.gd" id="7_a3fgx"]
+[ext_resource type="PackedScene" path="res://Scene/UI/game_over_panel.tscn" id="8_gover"]
+[ext_resource type="PackedScene" path="res://Scene/UI/pause_panel.tscn" id="9_pause"]
+[ext_resource type="PackedScene" path="res://Scene/UI/tutorial_panel.tscn" id="10_tutorial"]
+
+[node name="BattleScene" type="Node2D" unique_id=25329801]
+position = Vector2(36, -3)
+script = ExtResource("1_uk2p2")
+
+[node name="Backgrond" type="Sprite2D" parent="." unique_id=1116975742]
+position = Vector2(347.5, 558)
+scale = Vector2(0.94875, 1.1359376)
+texture = ExtResource("1_md0br")
+
+[node name="Wall" type="Sprite2D" parent="." unique_id=1457918698]
+z_index = 1
+position = Vector2(363, 1359)
+scale = Vector2(1.25, 1)
+texture = ExtResource("2_j1wa3")
+
+[node name="Character_creator" type="Node2D" parent="." unique_id=716444874]
+position = Vector2(672, 95)
+script = ExtResource("4_3kdla")
+
+[node name="Enemies_creator_creator" type="Node2D" parent="." unique_id=1766085920]
+script = ExtResource("5_3kdla")
+
+[node name="Node2D" type="Node2D" parent="." unique_id=1753184644]
+position = Vector2(66, -155)
+
+[node name="UI" type="Control" parent="." unique_id=1563607559]
+layout_mode = 3
+anchors_preset = 0
+offset_left = -30.0
+offset_right = 766.0
+offset_bottom = 1223.0
+mouse_filter = 2
+script = ExtResource("5_r36lf")
+
+[node name="Show_Box_01" type="Panel" parent="UI" unique_id=1577982012]
+z_index = 5
+layout_mode = 0
+offset_left = 39.0
+offset_top = -1.0
+offset_right = 186.0
+offset_bottom = 73.0
+
+[node name="show_Wall_HP" type="Label" parent="UI/Show_Box_01" unique_id=171074583]
+layout_mode = 0
+offset_left = -3.0
+offset_top = 2.0
+offset_right = 142.0
+offset_bottom = 73.0
+theme_override_font_sizes/font_size = 18
+text = "城墙耐久度:"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Exp_Bar" type="ProgressBar" parent="UI" unique_id=1911053209]
+layout_mode = 0
+offset_left = 702.0
+offset_top = 95.0
+offset_right = 725.0
+offset_bottom = 453.0
+fill_mode = 3
+
+[node name="Lv" type="Label" parent="UI" unique_id=109407651]
+layout_mode = 0
+offset_left = 696.0
+offset_top = 461.0
+offset_right = 736.0
+offset_bottom = 484.0
+text = "Lv"
+
+[node name="PauseButton" type="Button" parent="UI"]
+layout_mode = 0
+offset_left = 596.0
+offset_top = 14.0
+offset_right = 700.0
+offset_bottom = 86.0
+theme_override_font_sizes/font_size = 24
+text = "暂停"
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=340231151]
+position = Vector2(356, 637)
+
+[node name="Reward_Creator" type="Node2D" parent="." unique_id=860209829]
+position = Vector2(-47, 3)
+script = ExtResource("7_a3fgx")
+
+[node name="Overlay" type="CanvasLayer" parent="."]
+layer = 5
+
+[node name="TutorialPanel" parent="Overlay" instance=ExtResource("10_tutorial")]
+
+[node name="PausePanel" parent="Overlay" instance=ExtResource("9_pause")]
+
+[node name="GameOverPanel" parent="Overlay" instance=ExtResource("8_gover")]
+
+[connection signal="pressed" from="UI/PauseButton" to="UI" method="_on_pause_button_pressed"]

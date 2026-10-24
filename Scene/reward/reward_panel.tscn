@@ -1,0 +1,15 @@
+[gd_scene format=3 uid="uid://bxxkbjxtoc6av"]
+
+[ext_resource type="Script" uid="uid://biykcqieqa7t2" path="res://Script/reward/reward_panel.gd" id="1_loa0s"]
+
+[node name="Reward_Panel" type="Control" unique_id=797670383]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 386.0
+offset_bottom = 355.0
+script = ExtResource("1_loa0s")
+
+[node name="Panel" type="Panel" parent="." unique_id=921920605]
+layout_mode = 0
+offset_right = 799.0
+offset_bottom = 1157.0

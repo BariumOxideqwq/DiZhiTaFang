@@ -1,0 +1,28 @@
+[gd_scene load_steps=3 format=3 uid="uid://ctxd4cmlcp4ih"]
+
+[ext_resource type="Script" uid="uid://c42d5173etqjt" path="res://Script/Enemy/healing_area_enemy.gd" id="1_jrw41"]
+[ext_resource type="Texture2D" uid="uid://dpah1upneu8pc" path="res://GameResource/Enemy/healing_area_enemies.png" id="1_pkfvr"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_jrw41"]
+radius = 284.01584
+
+[node name="Healing_Area_Enemy" type="Area2D"]
+modulate = Color(1, 1, 1, 0.26666668)
+top_level = true
+scale = Vector2(0.85, 0.85)
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_jrw41")
+
+[node name="HealingAreaEnemies" type="Sprite2D" parent="."]
+modulate = Color(1, 1, 1, 0.6862745)
+position = Vector2(0, 1)
+texture = ExtResource("1_pkfvr")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_jrw41")
+
+[node name="LifeTimer" type="Timer" parent="."]
+one_shot = true
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]

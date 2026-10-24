@@ -1,0 +1,32 @@
+[gd_scene format=3 uid="uid://di7q53rtl25cl"]
+
+[ext_resource type="Script" uid="uid://bd6h7on5aypqd" path="res://Script/Weapon/primordial_knife.gd" id="1_scr"]
+[ext_resource type="Texture2D" uid="uid://cw84i0d5jo6e2" path="res://GameResource/Charater/row.png" id="2_tex"]
+[ext_resource type="Texture2D" uid="uid://d2ky8mcgk5uww" path="res://GameResource/Charater/bullet/ycbs .png" id="3_ve12k"]
+
+[node name="PrimordialKnife" type="Node2D" unique_id=285978233]
+script = ExtResource("1_scr")
+
+[node name="Icon" type="Sprite2D" parent="." unique_id=1161417549]
+visible = false
+modulate = Color(0.78, 0.9, 1, 0.95)
+position = Vector2(-95, -52)
+rotation = 0.55
+scale = Vector2(0.62, 0.62)
+texture = ExtResource("2_tex")
+
+[node name="Marker2D" type="Marker2D" parent="." unique_id=239810421]
+position = Vector2(30, -6)
+
+[node name="Timer" type="Timer" parent="." unique_id=968108079]
+wait_time = 3.5
+autostart = true
+
+[node name="FireTimer" type="Timer" parent="." unique_id=1050077104]
+wait_time = 6.0
+
+[node name="Ycbs" type="Sprite2D" parent="." unique_id=1027131513]
+position = Vector2(-92.99999, -52.999992)
+rotation = 0.48826075
+scale = Vector2(2.039997, 2.039997)
+texture = ExtResource("3_ve12k")

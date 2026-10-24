@@ -1,0 +1,73 @@
+[gd_scene format=3 uid="uid://dpa6enra6k5r1"]
+
+[ext_resource type="Texture2D" uid="uid://b6t3abydgy8eo" path="res://GameResource/Enemy/kulou/kulou_00.png" id="1_2j5l3"]
+[ext_resource type="Script" uid="uid://ctufo0n4y42yd" path="res://Script/Enemy/kulou.gd" id="1_dt8y7"]
+[ext_resource type="Texture2D" uid="uid://b4qeqqc2peegp" path="res://GameResource/Enemy/kulou/kulou_01.png" id="2_dt8y7"]
+[ext_resource type="Texture2D" uid="uid://b35kq5ehrswog" path="res://GameResource/shadow.png" id="2_ox7qd"]
+[ext_resource type="Texture2D" uid="uid://bcchm2r4ikx82" path="res://GameResource/Enemy/kulou/kulou_02.png" id="3_ox7qd"]
+[ext_resource type="Texture2D" uid="uid://dv1oll3egwelt" path="res://GameResource/Enemy/kulou/kulou_03.png" id="4_l7lly"]
+[ext_resource type="Texture2D" uid="uid://ba0uqvvewvbs6" path="res://GameResource/Enemy/kulou/kulou_04.png" id="5_igsqs"]
+[ext_resource type="Texture2D" uid="uid://b43o8kdhl4i43" path="res://GameResource/Enemy/kulou/kulou_05.png" id="6_yewhi"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_7gwdc"]
+animations = [{
+"frames": [{
+"duration": 0.5,
+"texture": ExtResource("1_2j5l3")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_dt8y7")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_ox7qd")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_l7lly")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_igsqs")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_yewhi")
+}],
+"loop": 1,
+"name": &"walk",
+"speed": 5.0
+}]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_2j5l3"]
+radius = 20.0
+height = 118.0
+
+[node name="Kulou" type="CharacterBody2D" unique_id=369951936]
+collision_layer = 2
+collision_mask = 2
+script = ExtResource("1_dt8y7")
+
+[node name="Shadow" type="Sprite2D" parent="." unique_id=2111437863]
+position = Vector2(2, 46)
+scale = Vector2(1.8125, 1.640625)
+texture = ExtResource("2_ox7qd")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=178517374]
+scale = Vector2(0.075, 0.075)
+sprite_frames = SubResource("SpriteFrames_7gwdc")
+animation = &"walk"
+autoplay = "walk"
+frame_progress = 0.8899922
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1096692770]
+position = Vector2(2, -1)
+shape = SubResource("CapsuleShape2D_2j5l3")
+
+[node name="Show_HP" type="Label" parent="." unique_id=344001556]
+offset_left = -17.0
+offset_top = -74.0
+offset_right = 23.0
+offset_bottom = -51.0
+
+[node name="Healing_timer" type="Timer" parent="." unique_id=1938360422]
+wait_time = 5.0
+autostart = true
+
+[connection signal="timeout" from="Healing_timer" to="." method="_on_healing_timer_timeout"]

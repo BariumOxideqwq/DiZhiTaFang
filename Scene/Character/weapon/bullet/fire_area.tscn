@@ -1,0 +1,57 @@
+[gd_scene format=3 uid="uid://dbwn8i1e238o"]
+
+[ext_resource type="Script" uid="uid://d2fkmhah66jax" path="res://Script/Character/Weapon/Bullet/fire_area.gd" id="1_5wykx"]
+[ext_resource type="Texture2D" uid="uid://dlrwvlm17w50d" path="res://GameResource/effect_round.png" id="1_dina6"]
+[ext_resource type="Texture2D" uid="uid://dq2nec8m5vqof" path="res://GameResource/Charater/bullet/fireball.png" id="3_six6q"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_5wykx"]
+radius = 143.05594
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_six6q"]
+particle_flag_disable_z = true
+emission_shape_scale = Vector3(120, 120, 1)
+emission_shape = 3
+emission_box_extents = Vector3(1, 1, 1)
+angle_min = -29.99999
+angle_max = 30.000011
+spread = 30.0
+initial_velocity_max = 80.0
+angular_velocity_min = -25.710016
+angular_velocity_max = 51.42998
+orbit_velocity_min = 9.49949e-08
+orbit_velocity_max = 9.49949e-08
+gravity = Vector3(0, -150, 98)
+damping_max = 30.000002
+scale_min = 0.79999995
+scale_max = 1.1999999
+color = Color(1, 1, 1, 0.3882353)
+hue_variation_min = -0.020000022
+hue_variation_max = 0.26999998
+
+[node name="Fire_Area" type="Area2D" unique_id=15099104]
+top_level = true
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_5wykx")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=2131648647]
+shape = SubResource("CircleShape2D_5wykx")
+
+[node name="EffectRound" type="Sprite2D" parent="." unique_id=186410486]
+modulate = Color(0.8392157, 0.12941177, 0, 0.5882353)
+position = Vector2(-1, 0)
+scale = Vector2(4.7226563, 4.7226563)
+texture = ExtResource("1_dina6")
+
+[node name="GPUParticles2D" type="GPUParticles2D" parent="." unique_id=354014993]
+amount = 25
+texture = ExtResource("3_six6q")
+interp_to_end = 0.1
+explosiveness = 0.1
+randomness = 0.2
+process_material = SubResource("ParticleProcessMaterial_six6q")
+
+[node name="LifeTimer" type="Timer" parent="."]
+one_shot = true
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]

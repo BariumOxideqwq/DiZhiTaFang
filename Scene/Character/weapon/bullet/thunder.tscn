@@ -1,0 +1,95 @@
+[gd_scene format=3 uid="uid://d0m2sq4jtrs14"]
+
+[ext_resource type="Texture2D" uid="uid://buiwf24fis3ge" path="res://GameResource/lightning-strike-Sheet.png" id="1_3oba7"]
+[ext_resource type="Script" uid="uid://dxc2jshv681v8" path="res://Script/Character/Weapon/Bullet/thunder.gd" id="1_lr870"]
+
+[sub_resource type="Animation" id="Animation_lr870"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [0]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:frame_coords")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector2i(9, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_3qw7i"]
+resource_name = "normal"
+length = 1.6666666
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0.033333335, 0.23333333, 0.36666667, 0.46666667, 0.53333336, 0.76666665, 0.8333333, 1, 1.2),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1),
+"update": 1,
+"values": [0, 1, 2, 3, 4, 6, 5, 8, 9]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:frame_coords")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0.8666667),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector2i(9, 0)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_4hq1q"]
+_data = {
+&"RESET": SubResource("Animation_lr870"),
+&"normal": SubResource("Animation_3qw7i")
+}
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_lr870"]
+radius = 104.97863
+height = 310.03207
+
+[node name="Thunder" type="Area2D" unique_id=482754580]
+modulate = Color(1, 1, 1, 0.78431374)
+top_level = true
+z_index = 2
+position = Vector2(-1, 26)
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_lr870")
+
+[node name="LightningStrikeSheet" type="Sprite2D" parent="." unique_id=2603621]
+position = Vector2(-1.0000001, -60.999996)
+scale = Vector2(2.397059, 2.397059)
+texture = ExtResource("1_3oba7")
+hframes = 16
+frame = 9
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="LightningStrikeSheet" unique_id=1238996269]
+libraries/ = SubResource("AnimationLibrary_4hq1q")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1074874577]
+position = Vector2(2, -28)
+rotation = -1.5643922
+shape = SubResource("CapsuleShape2D_lr870")
+
+[connection signal="animation_finished" from="LightningStrikeSheet/AnimationPlayer" to="." method="_on_animation_player_animation_finished"]

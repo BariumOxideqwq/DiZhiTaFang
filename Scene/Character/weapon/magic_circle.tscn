@@ -1,0 +1,45 @@
+[gd_scene format=3 uid="uid://cgw3ud1ufry1p"]
+
+[ext_resource type="Texture2D" uid="uid://4p2u6k1hrihc" path="res://GameResource/Charater/magic_circle.png" id="1_a7sam"]
+[ext_resource type="Script" uid="uid://08vm5ig382o7" path="res://Script/Character/Weapon/magic_circle.gd" id="1_jktd0"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_a7sam"]
+radius = 5555.0977
+
+[node name="magic_circle" type="Area2D" unique_id=824185184]
+position = Vector2(-61, 0)
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_jktd0")
+
+[node name="MagicCircle" type="Sprite2D" parent="." unique_id=1737474308]
+position = Vector2(0, 1)
+texture = ExtResource("1_a7sam")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=509763319]
+shape = SubResource("CircleShape2D_a7sam")
+
+[node name="attack_fixed_timer" type="Timer" parent="." unique_id=555513237]
+autostart = true
+
+[node name="thunder_timer" type="Timer" parent="." unique_id=1878204584]
+wait_time = 15.0
+autostart = true
+
+[node name="fire_timer" type="Timer" parent="." unique_id=1480363839]
+wait_time = 15.0
+autostart = true
+
+[node name="ice_timer" type="Timer" parent="." unique_id=249224673]
+wait_time = 13.0
+autostart = true
+
+[node name="wind_magic_timer" type="Timer" parent="." unique_id=1658921887]
+wait_time = 10.0
+autostart = true
+
+[connection signal="timeout" from="attack_fixed_timer" to="." method="_on_attack_fixed_timer_timeout"]
+[connection signal="timeout" from="thunder_timer" to="." method="_on_thunder_timer_timeout"]
+[connection signal="timeout" from="fire_timer" to="." method="_on_fire_timer_timeout"]
+[connection signal="timeout" from="ice_timer" to="." method="_on_ice_timer_timeout"]
+[connection signal="timeout" from="wind_magic_timer" to="." method="_on_wind_magic_timer_timeout"]

@@ -1,0 +1,27 @@
+[gd_scene format=3 uid="uid://bvom1mu118qet"]
+
+[ext_resource type="PackedScene" uid="uid://d4epe01ws0m1u" path="res://Scene/Character/weapon/bow.tscn" id="1_2t0n8"]
+[ext_resource type="Script" uid="uid://cemx4syoo6ywg" path="res://Script/Character/archer.gd" id="1_soir6"]
+[ext_resource type="Texture2D" uid="uid://f0m7uaw75rh7" path="res://GameResource/Charater/archer.png" id="1_v65f4"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_2t0n8"]
+radius = 25.0
+height = 118.0
+
+[node name="Archer" type="CharacterBody2D" unique_id=733614621]
+z_index = 2
+scale = Vector2(0.7, 0.7)
+input_pickable = true
+script = ExtResource("1_soir6")
+
+[node name="Bow" parent="." unique_id=1570404091 instance=ExtResource("1_2t0n8")]
+position = Vector2(7.1428556, -20.000004)
+rotation = -1.5707964
+
+[node name="Archer_sprite" type="Sprite2D" parent="." unique_id=435545377]
+position = Vector2(-1, 5)
+texture = ExtResource("1_v65f4")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1912936894]
+position = Vector2(3, 62)
+shape = SubResource("CapsuleShape2D_2t0n8")
