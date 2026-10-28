@@ -1,0 +1,35 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://Script/Particle/heal_burst.gd" id="1_scr"]
+[ext_resource type="Texture2D" uid="uid://chkitous51r6f" path="res://GameResource/effect/healing_icon.png" id="2_tex"]
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_heal"]
+emission_shape = 1
+emission_sphere_radius = 16.0
+direction = Vector3(0, -1, 0)
+spread = 42.0
+initial_velocity_min = 30.0
+initial_velocity_max = 85.0
+gravity = Vector3(0, -70, 0)
+scale_min = 0.22
+scale_max = 0.42
+angle_min = -180.0
+angle_max = 180.0
+angular_velocity_min = -90.0
+angular_velocity_max = 90.0
+color = Color(0.55, 1, 0.65, 0.95)
+
+[node name="HealBurst" type="Node2D"]
+z_index = 5
+script = ExtResource("1_scr")
+
+[node name="Particles" type="GPUParticles2D" parent="."]
+amount = 16
+lifetime = 0.55
+one_shot = true
+explosiveness = 1.0
+randomness = 0.35
+local_coords = true
+emitting = false
+texture = ExtResource("2_tex")
+process_material = SubResource("ParticleProcessMaterial_heal")

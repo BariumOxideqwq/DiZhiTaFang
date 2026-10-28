@@ -3,6 +3,8 @@ extends Area2D
 # ---------------------------------------------------------------------------
 # 溶原增殖生成的临时召唤单位：
 #   * 有血量，会被敌人攻击，也能被「行炁淬锋」治疗
+#   * 燃血生存：没有固定寿命，非攻击状态下按原有速率的一半持续流逝血量，
+#     血量流完就消失；同时仍有 100 秒的存在时间上限
 #   * 平时每隔一段时间随机挪动一小段（缓慢游荡）
 #   * 索敌范围内有敌人时，缓慢朝最近的敌人移动
 #   * 攻击范围略大于自己本体，按固定间隔对范围内敌人造成伤害
@@ -19,14 +21,20 @@ const WANDER_INTERVAL := Vector2(1.6, 3.0)
 const WANDER_STEP := Vector2(70.0, 170.0)
 const FIELD_RECT := Rect2(40.0, -140.0, 640.0, 1220.0)
 
+const MAX_LIFE := 100.0        # 存在时间硬上限
+const DRAIN_FACTOR := 0.5      # 非攻击状态：按原有速率的 50% 流逝血量
+const ATTACK_GRACE := 1.2      # 命中后这段时间内算“正在攻击”，不掉血
+
 @export var base_damage := 4.0
-@export var max_hp := 40.0
+@export var max_hp := 100.0
 
 var damage := 4.0
-var hp := 40.0
+var hp := 100.0
 var buff_mult := 1.0
-var life := 12.0
 var attack_interval := 0.5
+
+var age := 0.0
+var drain_rate := 0.0          # 每秒流逝的血量（setup 时按原寿命换算）
 
 var body_size := 0.0
 var attack_radius := 60.0
@@ -40,6 +48,7 @@ var _wander_target := Vector2.ZERO
 var _buff_tween: Tween
 var _flash_tween: Tween
 var _dead := false
+var _since_hit := 999.0
 
 @onready var _sprite: Sprite2D = $Sprite2D
 @onready var _hit_shape: CollisionShape2D = $CollisionShape2D
@@ -61,11 +70,11 @@ func apply_attack_interval() -> void:
 	attack_interval = GameManager.summon_attack_interval * 2.0
 
 
-func setup(minion_damage: float, life_time: float, hp_max: float = 40.0) -> void:
-	base_damage = minion_damage
-	life = life_time
+func setup(life_time: float, hp_max: float = 40.0) -> void:
 	max_hp = hp_max
 	hp = max_hp
+	# 原寿命 life_time 秒掉完一整条血 → 改成 50% 速率后实际能撑两倍时间
+	drain_rate = max_hp / maxf(life_time, 1.0) * DRAIN_FACTOR
 	recalc_damage()
 
 
@@ -85,7 +94,18 @@ func is_alive() -> bool:
 
 
 func recalc_damage() -> void:
-	damage = (base_damage + GameManager.summon_damage_bonus) * buff_mult
+	# 统一伤害：临时单位的伤害由角色攻击力派生
+	damage = GameManager.dmg_minion() * buff_mult
+
+
+# --- 剩余存活时间（超过 99 只时按它决定删谁）--------------------------------
+
+func remaining_life() -> float:
+	var cap_left := maxf(MAX_LIFE - age, 0.0)
+	var hp_left := INF
+	if drain_rate > 0.0:
+		hp_left = maxf(hp, 0.0) / drain_rate
+	return minf(cap_left, hp_left)
 
 
 # --- 生命 -------------------------------------------------------------------
@@ -102,8 +122,11 @@ func _take_damage(amount: float) -> void:
 func _heal(amount: float) -> void:
 	if _dead or amount <= 0.0:
 		return
+	var before := hp
 	hp = minf(hp + amount, max_hp)
 	_flash(Color(0.6, 1.0, 0.7, 1.0))
+	if hp > before:
+		ParticleDirector.spawn_heal(get_tree().current_scene, global_position, self)
 
 
 func _die() -> void:
@@ -135,20 +158,34 @@ func _end_enhance() -> void:
 	recalc_damage()
 
 
-# --- 每帧：存活时间 / 移动 / 攻击 -------------------------------------------
+# --- 每帧：燃血 / 移动 / 攻击 -----------------------------------------------
 
 func _physics_process(delta: float) -> void:
 	if GameManager.is_game_over or _dead:
 		return
-	life -= delta
-	if _sprite != null:
-		_sprite.modulate.a = clampf(life / 2.0, 0.2, 0.9)
-	if life <= 0.0:
-		queue_free()
+	age += delta
+	_since_hit += delta
+	if age >= MAX_LIFE:
+		_die()
 		return
+	# 非攻击状态下燃血：按原有速率的一半流逝
+	if _since_hit > ATTACK_GRACE:
+		hp -= drain_rate * delta
+		if hp <= 0.0:
+			hp = 0.0
+			_die()
+			return
 	_update_move(delta)
 	_apply_separation(delta)
 	_update_attack(delta)
+	_update_alpha()
+
+
+func _update_alpha() -> void:
+	if _sprite == null:
+		return
+	var left := remaining_life()
+	_sprite.modulate.a = clampf(left / 6.0, 0.45, 0.9)
 
 
 func _apply_separation(delta: float) -> void:
@@ -231,10 +268,13 @@ func _update_attack(delta: float) -> void:
 	if _attack_timer > 0.0:
 		return
 	_attack_timer = attack_interval
+	# 每次出手前刷新伤害（角色攻击力 / 奖励会变）
+	recalc_damage()
 	var hit := false
 	for body in get_overlapping_bodies():
 		if body.has_method("_Damage"):
 			body._Damage(damage)
 			hit = true
 	if hit:
+		_since_hit = 0.0
 		Audio.play("hit", -18.0)

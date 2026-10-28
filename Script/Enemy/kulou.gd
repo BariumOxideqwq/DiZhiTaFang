@@ -6,8 +6,9 @@ const HEALING_AREA_ENEMY = preload("uid://ctxd4cmlcp4ih")
 
 func _ready() -> void:
 	Max_HP = 1000.0 + (GameManager.GameProgress * (100 + (GameManager.GameProgress - 1)))
-	HP = 1000.0 + (GameManager.GameProgress * (100 + (GameManager.GameProgress - 1)))
+	HP = Max_HP
 	speed = 200.0 + (GameManager.GameProgress * (10 + (GameManager.GameProgress - 1)))
+	defense = 40.0 + float(GameManager.GameProgress) * 8.0
 	damage = 2
 	_set_Label()
 
@@ -21,7 +22,7 @@ func _move(delta: float) -> void:
 
 
 func _Damage(amount: float) -> void:
-	HP -= amount
+	HP -= _mitigate(amount)
 	HP = snappedf(HP, 0.01)
 	_damage_effect()
 	if HP <= 0.0:

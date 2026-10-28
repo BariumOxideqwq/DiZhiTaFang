@@ -1,8 +1,8 @@
 extends Area2D
 
 # 法师的魔法阵：普攻魔法弹 + 雷电/炼狱/暴雪/风卷四套技能
+# 所有伤害都不再自己维护数值，统一从 GameManager 的角色攻击力派生。
 
-var damage := 15.0
 var attack_speed := 8.0
 
 var fire_magic_unlock := false
@@ -11,16 +11,16 @@ var thunder_magic_unlock := false
 var wind_magic_ulock := false
 var wind_nums := 1
 
-var fire_magic_damage := 50.0
-var frozen_magic_damage := 35.0
-var thunder_damage := 80.0
-
 const MAGIC_BULLET = preload("uid://cnehu81xh83e6")
 const THUNDER = preload("uid://d0m2sq4jtrs14")
 const FIRE_AREA = preload("uid://dbwn8i1e238o")
 const SNOW_CURTAIN = preload("uid://b7u6vvt065k76")
+const ARCANE_BOLT = preload("res://Scene/Character/weapon/bullet/arcane_bolt.tscn")
+
+const ARCANE_INTERVAL := 6.0
 
 var a_dir := 1.0
+var _arcane_timer := 0.0
 
 
 func _ready() -> void:
@@ -35,6 +35,28 @@ func _physics_process(delta: float) -> void:
 		a_dir = -1.0
 	elif $MagicCircle.modulate.a <= 0.0:
 		a_dir = 1.0
+	_tick_arcane(delta)
+
+
+# --- 31 魔力解构：周期性朝前方丢出巨大的奥术魔弹 -----------------------------
+
+func _tick_arcane(delta: float) -> void:
+	if GameManager.arcane_level <= 0:
+		return
+	_arcane_timer -= delta
+	if _arcane_timer > 0.0:
+		return
+	_arcane_timer = maxf(ARCANE_INTERVAL - 1.0 * float(GameManager.arcane_level), 2.5)
+	_fire_arcane()
+
+
+func _fire_arcane() -> void:
+	var bolt = ARCANE_BOLT.instantiate()
+	bolt.setup(GameManager.arcane_level)
+	add_child(bolt)
+	bolt.global_position = global_position + Vector2.UP.rotated(rotation) * 40.0
+	bolt.rotation = rotation
+	Audio.play("magic", -6.0)
 
 
 func change_target_pos(pos: Vector2) -> void:
@@ -44,7 +66,7 @@ func change_target_pos(pos: Vector2) -> void:
 func _shoot() -> void:
 	var magic_ball = MAGIC_BULLET.instantiate()
 	add_child(magic_ball)
-	magic_ball._set_data(damage, 0)
+	magic_ball._set_data(GameManager.dmg_magic_bolt(), 0)
 	magic_ball.global_position = global_position
 	magic_ball.rotation = rotation + PI / 2.0
 	Audio.play("magic")
@@ -54,7 +76,7 @@ func _shoot() -> void:
 	bullet.global_position = global_position
 	bullet.rotation = rotation + PI / 2.0
 	add_child(bullet)
-	bullet._set_data(damage, r)
+	bullet._set_data(GameManager.dmg_magic_bolt(), r)
 
 
 func _on_attack_fixed_timer_timeout() -> void:
@@ -67,7 +89,7 @@ func _on_thunder_timer_timeout() -> void:
 		return
 
 	var thunder = THUNDER.instantiate()
-	thunder.damage = thunder_damage
+	thunder.damage = GameManager.dmg_thunder()
 	var target_pos: Vector2
 	var bodies := get_overlapping_bodies()
 	if bodies.size() != 0:
@@ -95,7 +117,7 @@ func _on_fire_timer_timeout() -> void:
 		var r_x := randf_range(15.0, 650.0)
 		var r_y := randf_range(80.0, 1000.0)
 		var fire_area = FIRE_AREA.instantiate()
-		fire_area.damage = fire_magic_damage
+		fire_area.damage = GameManager.dmg_fire()
 		fire_area.global_position = Vector2(r_x, r_y)
 		add_child(fire_area)
 	$fire_timer.wait_time = 10.0 + randf_range(-0.5, 0.5)
@@ -106,7 +128,7 @@ func _on_ice_timer_timeout() -> void:
 		return
 
 	var snow_curtain = SNOW_CURTAIN.instantiate()
-	snow_curtain.damage = frozen_magic_damage
+	snow_curtain.damage = GameManager.dmg_snow()
 	snow_curtain.global_position = Vector2(-1.0, -180.0)
 	add_child(snow_curtain)
 	snow_curtain._set_life_time(8.0)
@@ -121,7 +143,7 @@ func _on_wind_magic_timer_timeout() -> void:
 	for j in range(wind_nums):
 		for i in range(30):
 			var wind = MAGIC_BULLET.instantiate()
-			wind._set_data(damage / 2.0, 4)
+			wind._set_data(GameManager.dmg_wind(), 4)
 			wind.penetrable = true
 			wind.rotation = rotation + float(i) * PI / 36.0
 			wind.scale = Vector2(3.0, 3.0)

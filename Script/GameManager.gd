@@ -20,6 +20,24 @@ const WALL_MAX_HEALTH := 10
 const REWARD_MAX_LEVEL := 3
 const SAVE_PATH := "user://save.cfg"
 
+# ---------------------------------------------------------------------------
+# BOSS 与滚动苹果
+#   BOSS：9 级后按时间间隔刷新，间隔随进度缩短（有下限），场上同时只能有一只，
+#         出场时从 BOSS_SCENES 里随机挑一只。
+#   苹果：6 级后少量出现、10 级后大量出现（间隔见 apple_interval()）。
+# ---------------------------------------------------------------------------
+const BOSS_UNLOCK_LEVEL := 9
+const BOSS_INTERVAL_BASE := 80.0     # 基础间隔（秒）
+const BOSS_INTERVAL_STEP := 7.0      # 每点进度缩短多少秒
+const BOSS_INTERVAL_MIN := 42.0      # 间隔下限（不会太快）
+const BOSS_SCENES := [preload("res://Scene/Enemy/boss_slime_king.tscn")]
+
+const APPLE = preload("res://Scene/Enemy/scrolling_apple.tscn")
+const APPLE_MIN_LEVEL := 6           # 6 级后少量出现
+const APPLE_DENSE_LEVEL := 10        # 10 级后大量出现
+const APPLE_INTERVAL_SPARSE := 5.0
+const APPLE_INTERVAL_DENSE := 1.6
+
 const SLIME = preload("uid://dsius4s52bn05")
 const MOLE = preload("uid://bxb7lmgyhnjq")
 const KULOU = preload("uid://dpa6enra6k5r1")
@@ -43,18 +61,21 @@ const START_SCENE_PATH = "uid://l04o6k4a24wp"
 # 再用 _add_reward(角色, 阶段号) 把该阶段的新奖励追加进池子即可。
 const REWARD_STAGES := {
 	0: {  # 弓箭手
-		1: [0, 1, 2, 3, 4, 5, 6, 7, 21],
-		2: [19],  # 第一阶段满了（Lv9）之后解锁：淬锋之矢
+		1: [0, 1, 2, 3, 4, 5, 6, 7, 21, 29],
+		2: [19, 30],  # 第一阶段满了（Lv9）之后解锁：淬锋之矢、鹰眼
 	},
 	1: {  # 法师
-		1: [0, 8, 9, 10, 11, 12, 13, 21],
+		1: [0, 8, 9, 10, 11, 12, 13, 21, 29],
+		2: [31],  # Lv9 之后解锁：魔力解构
 	},
 	2: {  # 召唤师
-		1: [0, 14, 15, 16, 17, 18, 20, 21],
+		1: [0, 14, 15, 16, 17, 18, 20, 21, 29],
+		2: [32, 33],  # Lv9 之后解锁：解离恶咒、解脱恩赐
 	},
 }
 
 var Wall_Health := WALL_MAX_HEALTH
+var Wall_Max := WALL_MAX_HEALTH
 var Character_option := 2
 
 var GameProgress := 0
@@ -69,6 +90,9 @@ var Rewards_pool: Array = []
 var reward_times := 0
 var reward_stage_2_added := false
 var _reward_loop_active := false
+
+var _boss_timer := 0.0   # BOSS 刷新计时（场上有 BOSS 时暂停）
+var _apple_timer := 0.0  # 滚动苹果刷新计时
 
 var Enemies_creator_creator
 var Reward_Creator
@@ -90,27 +114,67 @@ var best_wave := 0
 var best_kills := 0
 
 # --- 技能状态（0 表示未解锁）---
-var summon_damage_bonus := 0.0      # 14 提升召唤物伤害
 var summon_attack_interval := 0.5   # 20 提升召唤物攻速（攻击间隔，秒）
 var summon_crack_level := 0         # 15 此岸渡蚀
 var summon_proliferate_level := 0   # 16 溶原增殖
 var summon_heal_level := 0          # 17 行炁淬锋
 var summon_hallucination_level := 0 # 18 负向幻觉
 var archer_bleed_level := 0         # 19 淬锋之矢
-var archer_bleed_dps := 0.0
 var summon_buff_duration := 5.0
+
+# 人物穿透：抵消怪物防御带来的伤害减免（破甲奖励 29）
+var penetration := 0.0
+# 鹰眼（30）：百分比穿透，最高 50%
+var penetration_pct := 0.0
+# 法师 31 魔力解构 / 召唤师 32 解离恶咒 / 33 解脱恩赐
+var arcane_level := 0
+var totem_curse_level := 0
+var totem_blessing_level := 0
 
 # --- 武器状态（21–28）---
 var weapon_info: Resource
 var weapon_node: Node2D
 var weapon_owned := false
-var weapon_damage_bonus := 0.0
+var weapon_ratio_bonus := 0.0   # 22 利刃：追加飞刀倍率
 var weapon_interval_mult := 1.0
 var weapon_maxhp_pct_level := 0
 var weapon_echo_level := 0
 var weapon_archer_sync := false
 var weapon_magician_fire := false
 var weapon_summoner_burial := false
+
+# ---------------------------------------------------------------------------
+# 统一伤害体系：所有技能/武器伤害都从「角色攻击力」派生，不再各自维护基础值。
+#   技能伤害 = 角色攻击力 × 倍率（带成长项时按对应奖励的等级加）
+#   调平衡：改下面的倍率表 + 各奖励提供的百分比即可。
+# ---------------------------------------------------------------------------
+const CLASS_BASE_DAMAGE := [20.0, 15.0, 10.0]  # 弓箭手 / 法师 / 召唤师
+const DAMAGE_PER_LEVEL := 2.0                  # 每级给角色加的固定攻击力
+
+const RATIO_ARROW := 1.0        # 弓箭普攻
+const RATIO_KNIFE := 2.0        # 原初飞刀
+const RATIO_MAGIC_BOLT := 1.0   # 法师普攻魔法弹
+const RATIO_THUNDER := 3.0      # 雷电
+const RATIO_FIRE := 2.0         # 火焰弹 / 炼狱火场
+const RATIO_SNOW := 1.5         # 暴雪
+const RATIO_WIND := 0.5         # 风卷（单发）
+const RATIO_ARCANE := 3.0       # 奥术魔弹
+const RATIO_CRACK := 1.2        # 此岸渡蚀
+const RATIO_SUMMONER_MAIN := 0.5  # 主召唤物
+const RATIO_MINION := 0.25      # 溶原增殖的临时单位
+const RATIO_TOTEM := 0.5        # 解离恶咒图腾（每跳）
+const RATIO_BLEED := 0.08       # 淬锋之矢（每跳每层）
+
+const GROW_THUNDER := 0.75      # 对应奖励每升一级的倍率成长
+const GROW_FIRE := 0.5
+const GROW_SNOW := 0.3
+const GROW_ARCANE := 1.0
+const GROW_CRACK := 0.5
+const GROW_MINION := 0.05
+const GROW_TOTEM := 0.2
+
+var damage_flat := 0.0          # 奖励给的固定攻击力
+var damage_pct := 0.0           # 奖励给的百分比攻击力（1 = +100%）
 
 const SUMMON_ATTACK_INTERVAL_BASE := 0.5
 const SUMMON_ATTACK_INTERVAL_MIN := 0.18
@@ -127,6 +191,8 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if in_run and not is_game_over and not get_tree().paused:
 		run_time += delta
+	_tick_boss(delta)
+	_tick_apple(delta)
 
 
 # --- 场景与单局 -------------------------------------------------------------
@@ -153,6 +219,7 @@ func return_to_menu() -> void:
 
 func _reset_run() -> void:
 	Wall_Health = WALL_MAX_HEALTH
+	Wall_Max = WALL_MAX_HEALTH
 	GameProgress = 0
 	Exp_max = 10
 	Exp_cur = 0
@@ -174,21 +241,30 @@ func _reset_run() -> void:
 	tutorial_active = false
 	run_time = 0.0
 	kill_count = 0
+	_boss_timer = 0.0
+	_apple_timer = 0.0
 
-	summon_damage_bonus = 0.0
+	# 统一伤害体系
+	damage_flat = 0.0
+	damage_pct = 0.0
+
 	summon_attack_interval = SUMMON_ATTACK_INTERVAL_BASE
 	summon_crack_level = 0
 	summon_proliferate_level = 0
 	summon_heal_level = 0
 	summon_hallucination_level = 0
 	archer_bleed_level = 0
-	archer_bleed_dps = 0.0
 	summon_buff_duration = 5.0
+	penetration = 0.0
+	penetration_pct = 0.0
+	arcane_level = 0
+	totem_curse_level = 0
+	totem_blessing_level = 0
 
 	weapon_info = null
 	weapon_node = null
 	weapon_owned = false
-	weapon_damage_bonus = 0.0
+	weapon_ratio_bonus = 0.0
 	weapon_interval_mult = 1.0
 	weapon_maxhp_pct_level = 0
 	weapon_echo_level = 0
@@ -198,6 +274,7 @@ func _reset_run() -> void:
 
 	for info in Reward_Asset_All.reward_list:
 		info.level = 0
+	ParticleDirector.reset()
 	get_tree().paused = false
 
 
@@ -217,7 +294,16 @@ func _BeDamaged(damage: float) -> void:
 func _heal_wall(amount: int) -> void:
 	if amount <= 0:
 		return
-	Wall_Health = mini(Wall_Health + amount, WALL_MAX_HEALTH)
+	Wall_Health = mini(Wall_Health + amount, Wall_Max)
+	emit_signal("Damage_Wall")
+
+
+# BOSS 击杀奖励：提高城墙血量上限（并顺带补上这部分耐久）
+func _raise_wall_max(amount: int) -> void:
+	if amount <= 0:
+		return
+	Wall_Max += amount
+	Wall_Health = mini(Wall_Health + amount, Wall_Max)
 	emit_signal("Damage_Wall")
 
 
@@ -252,6 +338,90 @@ func _check_reward_stage_unlock() -> void:
 	if level >= 9 and not reward_stage_2_added:
 		reward_stage_2_added = true
 		_add_reward(Character_option, 2)
+
+
+# --- BOSS -------------------------------------------------------------------
+
+# BOSS 出现规则：
+#   * 9 级后开始计时，之后按「时间间隔」刷新（不再按波次/等级台阶触发）
+#   * 间隔由游戏进度决定：进度越高间隔越短，但有下限，不会太快
+#   * 场上同时只能有一只 BOSS（有 BOSS 时计时暂停）
+#   * 出场时从已登记的 BOSS 列表里随机挑一只
+func _tick_boss(delta: float) -> void:
+	if not in_run or is_game_over or tutorial_active:
+		return
+	if level < BOSS_UNLOCK_LEVEL:
+		return
+	if _boss_alive():
+		return
+	_boss_timer += delta
+	if _boss_timer < boss_interval():
+		return
+	_boss_timer = 0.0
+	_spawn_random_boss()
+
+
+# 当前进度下的 BOSS 间隔（秒）
+func boss_interval() -> float:
+	return maxf(BOSS_INTERVAL_BASE - BOSS_INTERVAL_STEP * float(maxi(GameProgress, 1)), BOSS_INTERVAL_MIN)
+
+
+func _boss_alive() -> bool:
+	var tree := get_tree()
+	if tree == null:
+		return false
+	return not tree.get_nodes_in_group("bosses").is_empty()
+
+
+func _spawn_random_boss() -> void:
+	var tree := get_tree()
+	if tree == null or tree.current_scene == null or BOSS_SCENES.is_empty():
+		return
+	var boss_scene: PackedScene = BOSS_SCENES[randi_range(0, BOSS_SCENES.size() - 1)]
+	var boss = boss_scene.instantiate()
+	tree.current_scene.add_child(boss)
+	boss.global_position = Vector2(360.0, -260.0)
+
+
+# BOSS 死亡：在它周围炸出 3~5 只史莱姆
+func _spawn_slime_children(pos: Vector2, count: int) -> void:
+	if is_game_over or get_tree() == null or get_tree().current_scene == null:
+		return
+	var scene := get_tree().current_scene
+	var total := maxi(count, 1)
+	for i in total:
+		var slime = SLIME.instantiate()
+		scene.add_child(slime)
+		var angle := TAU * float(i) / float(total)
+		slime.global_position = pos + Vector2(cos(angle), sin(angle)) * 70.0
+
+
+# --- 滚动苹果 ---------------------------------------------------------------
+
+func _tick_apple(delta: float) -> void:
+	if not in_run or is_game_over or tutorial_active:
+		return
+	if level < APPLE_MIN_LEVEL:
+		return
+	_apple_timer -= delta
+	if _apple_timer > 0.0:
+		return
+	_apple_timer = apple_interval()
+	_spawn_apple()
+
+
+# 6 级后少量出现，10 级后大量出现
+func apple_interval() -> float:
+	return APPLE_INTERVAL_DENSE if level >= APPLE_DENSE_LEVEL else APPLE_INTERVAL_SPARSE
+
+
+func _spawn_apple() -> void:
+	var tree := get_tree()
+	if tree == null or tree.current_scene == null:
+		return
+	var apple = APPLE.instantiate()
+	tree.current_scene.add_child(apple)
+	apple.global_position = Vector2(randf_range(80.0, 500.0), -210.0 + randf_range(-5.0, 5.0))
 
 
 func _reward_creat() -> void:
@@ -319,8 +489,8 @@ func _reward_detect(type: int) -> void:
 			_heal_wall(1)
 			_bump_reward_level(0)
 		1:
-			if Bow != null:
-				Bow.damage += 10.0
+			# 弓箭手：提升攻击力（+20%/级，作用于所有伤害）
+			damage_pct += 0.2
 			_bump_reward_level(1)
 		2:
 			if Bow != null:
@@ -354,33 +524,25 @@ func _reward_detect(type: int) -> void:
 					Bow.per += 0.02
 			_bump_reward_level(7)
 		8:
-			if Magic_Cricle != null:
-				Magic_Cricle.damage += 10.0
+			# 法师：提升攻击力（+20%/级，作用于所有伤害）
+			damage_pct += 0.2
 			_bump_reward_level(8)
 		9:
 			if Magic_Cricle != null:
 				Magic_Cricle.attack_speed += 8.0
 			_bump_reward_level(9)
 		10:
-			if Magic_Cricle != null:
-				if not Magic_Cricle.thunder_magic_unlock:
-					Magic_Cricle.thunder_magic_unlock = true
-				else:
-					Magic_Cricle.thunder_damage += 20.0
+			# 雷电：首次解锁，之后等级越高倍率越高（伤害由 dmg_thunder 派生）
+			if Magic_Cricle != null and not Magic_Cricle.thunder_magic_unlock:
+				Magic_Cricle.thunder_magic_unlock = true
 			_bump_reward_level(10)
 		11:
-			if Magic_Cricle != null:
-				if not Magic_Cricle.fire_magic_unlock:
-					Magic_Cricle.fire_magic_unlock = true
-				else:
-					Magic_Cricle.fire_magic_damage += 15.0
+			if Magic_Cricle != null and not Magic_Cricle.fire_magic_unlock:
+				Magic_Cricle.fire_magic_unlock = true
 			_bump_reward_level(11)
 		12:
-			if Magic_Cricle != null:
-				if not Magic_Cricle.frozen_magic_unlock:
-					Magic_Cricle.frozen_magic_unlock = true
-				else:
-					Magic_Cricle.frozen_magic_damage += 5.0
+			if Magic_Cricle != null and not Magic_Cricle.frozen_magic_unlock:
+				Magic_Cricle.frozen_magic_unlock = true
 			_bump_reward_level(12)
 		13:
 			if Magic_Cricle != null:
@@ -390,8 +552,8 @@ func _reward_detect(type: int) -> void:
 					Magic_Cricle.wind_nums += 1
 			_bump_reward_level(13)
 		14:
-			# 召唤师：提升召唤物伤害
-			summon_damage_bonus += 5.0
+			# 召唤师：提升攻击力（+30%/级）——主召唤物与临时单位都从它派生
+			damage_pct += 0.3
 			refresh_summons()
 			_bump_reward_level(14)
 		15:
@@ -412,9 +574,8 @@ func _reward_detect(type: int) -> void:
 			summon_hallucination_level += 1
 			_bump_reward_level(18)
 		19:
-			# 弓箭手：淬锋之矢（流血）
+			# 弓箭手：淬锋之矢（流血强度由 dmg_bleed 派生）
 			archer_bleed_level += 1
-			archer_bleed_dps = 2.0 * float(archer_bleed_level)
 			_bump_reward_level(19)
 		20:
 			# 召唤师：提升召唤物攻速（缩短攻击间隔）
@@ -429,7 +590,8 @@ func _reward_detect(type: int) -> void:
 			acquire_weapon(KNIFE_WEAPON)
 			_consume_reward(21)
 		22:
-			weapon_damage_bonus += 15.0
+			# 利刃：飞刀倍率 +0.2/级
+			weapon_ratio_bonus += 0.2
 			refresh_weapon()
 			_bump_reward_level(22)
 		23:
@@ -456,6 +618,27 @@ func _reward_detect(type: int) -> void:
 			weapon_summoner_burial = true
 			refresh_weapon()
 			_consume_reward(28)
+		29:
+			# 通用：破甲（穿透 +8，抵消防御减免）
+			penetration += 8.0
+			_bump_reward_level(29)
+		30:
+			# 弓箭手：鹰眼（百分比穿透 20% / 35% / 50%）
+			var eye_level = Reward_Asset_All.reward_list[30].level
+			penetration_pct = [0.2, 0.35, 0.5][mini(int(eye_level), 2)]
+			_bump_reward_level(30)
+		31:
+			# 法师：魔力解构（魔法阵读取等级后周期性丢奥术魔弹）
+			arcane_level += 1
+			_bump_reward_level(31)
+		32:
+			# 召唤师：解离恶咒图腾
+			totem_curse_level += 1
+			_bump_reward_level(32)
+		33:
+			# 召唤师：解脱恩赐图腾
+			totem_blessing_level += 1
+			_bump_reward_level(33)
 	Audio.play("reward")
 	_Remove_Pause_Game()
 
@@ -513,16 +696,86 @@ func weapon_max_hp_pct() -> float:
 	return 0.03 * float(weapon_maxhp_pct_level)
 
 
-func weapon_knife_damage() -> float:
-	return 40.0 + weapon_damage_bonus
+# --- 统一伤害：角色攻击力与各技能倍率 ---------------------------------------
+
+# 角色攻击力（唯一的伤害基准）
+func character_damage() -> float:
+	var base: float = CLASS_BASE_DAMAGE[clampi(Character_option, 0, 2)]
+	return (base + DAMAGE_PER_LEVEL * float(maxi(level - 1, 0))) * (1.0 + damage_pct) + damage_flat
+
+
+func _reward_level_of(index: int) -> int:
+	if index < 0 or index >= Reward_Asset_All.reward_list.size():
+		return 0
+	return int(Reward_Asset_All.reward_list[index].level)
+
+
+# 倍率 → 实际伤害（growth / reward_index 用于“该技能每升一级提高倍率”）
+func skill_damage(ratio: float, growth: float = 0.0, reward_index: int = -1) -> float:
+	var mult := ratio
+	if reward_index >= 0 and growth > 0.0:
+		mult += growth * float(maxi(_reward_level_of(reward_index) - 1, 0))
+	return character_damage() * mult
+
+
+func dmg_arrow() -> float:
+	return character_damage() * RATIO_ARROW
+
+
+func dmg_knife() -> float:
+	return character_damage() * (RATIO_KNIFE + weapon_ratio_bonus)
+
+
+func dmg_magic_bolt() -> float:
+	return character_damage() * RATIO_MAGIC_BOLT
+
+
+func dmg_thunder() -> float:
+	return skill_damage(RATIO_THUNDER, GROW_THUNDER, 10)
+
+
+func dmg_fire() -> float:
+	return skill_damage(RATIO_FIRE, GROW_FIRE, 11)
+
+
+func dmg_snow() -> float:
+	return skill_damage(RATIO_SNOW, GROW_SNOW, 12)
+
+
+func dmg_wind() -> float:
+	return character_damage() * RATIO_WIND
+
+
+func dmg_arcane() -> float:
+	return skill_damage(RATIO_ARCANE, GROW_ARCANE, 31)
+
+
+func dmg_crack() -> float:
+	return skill_damage(RATIO_CRACK, GROW_CRACK, 15)
+
+
+func dmg_summoner_main() -> float:
+	# 主召唤物：完全由召唤师攻击力派生
+	return character_damage() * RATIO_SUMMONER_MAIN
+
+
+func dmg_minion() -> float:
+	# 击杀后生成的临时单位：同样只看召唤师攻击力
+	return skill_damage(RATIO_MINION, GROW_MINION, 16)
+
+
+func dmg_totem() -> float:
+	return skill_damage(RATIO_TOTEM, GROW_TOTEM, 32)
+
+
+func dmg_bleed() -> float:
+	return character_damage() * RATIO_BLEED * float(maxi(archer_bleed_level, 1))
 
 
 func _on_enemy_killed(pos: Vector2) -> void:
 	if summon_proliferate_level <= 0 or is_game_over:
 		return
 	if get_tree().current_scene == null:
-		return
-	if get_tree().get_nodes_in_group("summon_minions").size() >= 99:
 		return
 	# 击杀可能发生在物理回调里，生成新 Area2D 必须延后到物理帧结束
 	_spawn_minion.call_deferred(pos)
@@ -531,15 +784,34 @@ func _on_enemy_killed(pos: Vector2) -> void:
 func _spawn_minion(pos: Vector2) -> void:
 	if is_game_over or get_tree().current_scene == null:
 		return
+	# 超过上限时优先删掉剩余存活时间最少的临时单位，再补新的
 	if get_tree().get_nodes_in_group("summon_minions").size() >= 99:
-		return
+		_evict_weakest_minion()
 	var minion = SUMMON_MINION.instantiate()
 	get_tree().current_scene.add_child(minion)
 	# 出生点自动错开，避免连续击杀时新单位全叠在同一个点上
 	minion.global_position = _find_free_minion_spot(pos, minion.separation_radius, minion)
-	var minion_damage := 4.0 + 2.0 * float(summon_proliferate_level - 1)
-	var minion_hp := 40.0 + 10.0 * float(summon_proliferate_level - 1)
-	minion.setup(minion_damage, 12.0, minion_hp)
+	var minion_hp := 70.0 + 20.0 * float(summon_proliferate_level - 1)
+	var minion_life_time = 10+(10*float(summon_proliferate_level - 1)-5)
+	# 伤害不再单独传：统一由 GameManager.dmg_minion() 派生
+	minion.setup(minion_life_time, minion_hp)
+
+
+func _evict_weakest_minion() -> void:
+	# 剩余存活时间最少的那个（含 100 秒上限与燃血剩余血量的较小值）
+	var weakest: Node2D = null
+	var weakest_left := INF
+	for minion in get_tree().get_nodes_in_group("summon_minions"):
+		if not is_instance_valid(minion):
+			continue
+		var left: float = INF
+		if minion.has_method("remaining_life"):
+			left = minion.remaining_life()
+		if left < weakest_left:
+			weakest_left = left
+			weakest = minion
+	if weakest != null:
+		weakest.queue_free()
 
 
 func _find_free_minion_spot(origin: Vector2, spacing: float, self_node: Node2D) -> Vector2:

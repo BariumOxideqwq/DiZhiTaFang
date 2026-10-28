@@ -3,17 +3,16 @@ extends Area2D
 # ---------------------------------------------------------------------------
 # 召唤物一号：追击最近的敌人，每 0.5s 对重叠的敌人造成伤害。
 # 它现在有血量：会被敌人攻击，也能被「行炁淬锋」治疗；
-# 被击倒后 4 秒在召唤师身边重新召唤（满血）。
+# 被击倒后 2.5 秒在召唤师身边重新召唤（满血）。
 # ---------------------------------------------------------------------------
 
-const RESPAWN_DELAY := 4.0
+const RESPAWN_DELAY := 2.5
 
-@export var base_damage := 5.0
 @export var weight := 0.1
-@export var max_hp := 150.0
+@export var max_hp := 200.0
 
 var damage := 5.0
-var hp := 150.0
+var hp := 200.0
 var targetpos := Vector2(360.0, 1500.0)
 var buff_mult := 1.0
 
@@ -39,7 +38,8 @@ func apply_attack_interval() -> void:
 
 
 func recalc_damage() -> void:
-	damage = (base_damage + GameManager.summon_damage_bonus) * buff_mult
+	# 统一伤害：主召唤物的伤害由角色攻击力派生
+	damage = GameManager.dmg_summoner_main() * buff_mult
 
 
 func is_alive() -> bool:
@@ -60,8 +60,11 @@ func _take_damage(amount: float) -> void:
 func _heal(amount: float) -> void:
 	if _dead or amount <= 0.0:
 		return
+	var before := hp
 	hp = minf(hp + amount, max_hp)
 	_flash(Color(0.6, 1.0, 0.7, 1.0))
+	if hp > before:
+		ParticleDirector.spawn_heal(get_tree().current_scene, global_position, self)
 
 
 func _die() -> void:
@@ -127,6 +130,8 @@ func _on_timer_timeout() -> void:
 	var bodies := get_overlapping_bodies()
 	if bodies.is_empty():
 		return
+	# 出手前刷新伤害（角色攻击力 / 奖励会变）
+	recalc_damage()
 	for body in bodies:
 		if body.has_method("_Damage"):
 			body._Damage(damage)

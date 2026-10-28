@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Script/Totem/totem.gd" id="1_scr"]
+
+[node name="Totem" type="Node2D"]
+z_index = 1
+script = ExtResource("1_scr")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(0, -22)
+scale = Vector2(0.28, 0.28)

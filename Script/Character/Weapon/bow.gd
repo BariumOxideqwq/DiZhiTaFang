@@ -1,10 +1,10 @@
 extends Node2D
 
 const ROW = preload("uid://bqkjktosk0whc")
+const SNIPING_TARGET = preload("res://Scene/Weapon/sniping_target.tscn")
 
 var shoot_times := 1
 var shoot_speed := 10.0
-var damage := 20.0
 var hp := 1
 var _san_she_times := 0
 var per := 0.0
@@ -50,7 +50,8 @@ func _bullet_offset(i: int) -> Vector2:
 
 
 func _inital_bullet(bullet) -> void:
-	bullet.damage = damage
+	# 统一伤害：箭矢伤害 = 角色攻击力 × 弓箭倍率
+	bullet.damage = GameManager.dmg_arrow()
 	bullet.hp = hp
 	bullet.per = per
 	bullet.rotation = rotation + PI / 2.0
@@ -95,12 +96,22 @@ func _detect_cloest() -> void:
 			cloest = dist
 			target = body
 	if target != null:
-		if target.HP / target.Max_HP <= kill_line:
-			if target.has_method("_Damage"):
-				target._Damage(target.HP + 10.0)
-		else:
-			if target.has_method("_Damage"):
-				target._Damage(target.Max_HP * (kill_line - 0.05))
+		var execute: bool = target.HP / target.Max_HP <= kill_line
+		var hit_pct := 0.0
+		if not execute:
+			# 非斩杀段：按最大生命百分比结算（BOSS 会吃比例抗性）
+			hit_pct = kill_line - 0.05
+		_play_snipe(target, hit_pct, execute)
+
+
+func _play_snipe(target: Node2D, hit_pct: float, execute: bool) -> void:
+	# 狙击特效负责整段演出，并在锁定后结算伤害
+	var scene := get_tree().current_scene
+	if scene == null:
+		return
+	var effect = SNIPING_TARGET.instantiate()
+	effect.setup(target, hit_pct, execute)
+	scene.add_child(effect)
 
 
 func _on_kill_line_timeout() -> void:

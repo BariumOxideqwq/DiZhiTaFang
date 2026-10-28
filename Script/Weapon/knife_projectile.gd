@@ -34,7 +34,11 @@ func _on_body_entered(body: Node2D) -> void:
 		return
 	body._Damage(damage)
 	if max_hp_pct > 0.0 and is_instance_valid(body):
-		body._Damage(body.Max_HP * max_hp_pct)
+		# 比例伤害统一走 _damage_percent_hp（BOSS 有比例抗性）
+		if body.has_method("_damage_percent_hp"):
+			body._damage_percent_hp(max_hp_pct)
+		else:
+			body._Damage(body.Max_HP * max_hp_pct)
 	if fire_on_hit:
 		_spawn_fire_at(global_position)
 	if echo_level > 0 and not is_echo and is_instance_valid(get_tree().current_scene):
@@ -66,8 +70,6 @@ func _spawn_fire_at(pos: Vector2) -> void:
 	var fire = load("uid://dbwn8i1e238o").instantiate()
 	scene.add_child(fire)
 	fire.global_position = pos
-	var fire_damage := 50.0
-	if GameManager.Magic_Cricle != null and is_instance_valid(GameManager.Magic_Cricle):
-		fire_damage = GameManager.Magic_Cricle.fire_magic_damage
-	fire.damage = fire_damage
+	# 统一伤害：火焰伤害由角色攻击力派生
+	fire.damage = GameManager.dmg_fire()
 	fire._set_life_time(4.0)

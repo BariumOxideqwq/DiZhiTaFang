@@ -1,0 +1,77 @@
+[gd_scene format=3 uid="uid://dchy7gogh5ak6"]
+
+[ext_resource type="Script" uid="uid://b84mibymah326" path="res://Script/Enemy/scrolling_apple.gd" id="1_scr"]
+[ext_resource type="Texture2D" uid="uid://crspsn5bvkpj5" path="res://GameResource/Enemy/scorlling_apple_anim.png" id="1_v8f0q"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_alacx"]
+atlas = ExtResource("1_v8f0q")
+region = Rect2(0, 0, 512, 512)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_orokt"]
+atlas = ExtResource("1_v8f0q")
+region = Rect2(512, 0, 512, 512)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_s4pdm"]
+atlas = ExtResource("1_v8f0q")
+region = Rect2(1024, 0, 512, 512)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hsyqq"]
+atlas = ExtResource("1_v8f0q")
+region = Rect2(1536, 0, 512, 512)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_4r2gk"]
+atlas = ExtResource("1_v8f0q")
+region = Rect2(2048, 0, 512, 512)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_bhunq"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_alacx")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_orokt")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_s4pdm")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hsyqq")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_4r2gk")
+}],
+"loop": 1,
+"name": &"default",
+"speed": 10.0
+}, {
+"frames": [],
+"loop": 1,
+"name": &"new_animation",
+"speed": 5.0
+}]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_apple"]
+radius = 28.460499
+
+[node name="scrolling_apple" type="CharacterBody2D" unique_id=1721743553]
+top_level = true
+collision_layer = 2
+collision_mask = 2
+script = ExtResource("1_scr")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1289952515]
+position = Vector2(-1, -11)
+scale = Vector2(0.25, 0.25)
+sprite_frames = SubResource("SpriteFrames_bhunq")
+autoplay = "default"
+frame_progress = 0.41839764
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1285989557]
+shape = SubResource("CircleShape2D_apple")
+
+[node name="Show_HP" type="Label" parent="." unique_id=1727837588]
+offset_left = -18.0
+offset_top = -110.0
+offset_right = 22.0
+offset_bottom = -87.0

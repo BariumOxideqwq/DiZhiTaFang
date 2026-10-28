@@ -63,7 +63,10 @@ func _on_body_entered(body: Node2D) -> void:
 			if body.has_method("_slow_down"):
 				body._slow_down(0.8,5)
 		if fire_attack:
-			body._Damage(0.15*body.Max_HP)
+			if body.has_method("_damage_percent_hp"):
+				body._damage_percent_hp(0.15)
+			else:
+				body._Damage(0.15*body.Max_HP)
 		if repel_attack:
 			body.global_position += Vector2(0,-15)
 		if !penetrable:

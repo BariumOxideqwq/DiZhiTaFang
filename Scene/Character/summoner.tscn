@@ -4,7 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://cr3la4l2qv46v" path="res://GameResource/Charater/summoner.png" id="1_m1skr"]
 [ext_resource type="PackedScene" uid="uid://ya8s8vcmq2my" path="res://Scene/Character/weapon/summoner_detect_area.tscn" id="3_pvnsj"]
 [ext_resource type="PackedScene" uid="uid://d0el7orxt031m" path="res://Scene/Character/weapon/summing_one.tscn" id="4_0rqnq"]
-[ext_resource type="Script" path="res://Script/Character/Skill/summoner_skill_manager.gd" id="5_skill"]
+[ext_resource type="Script" uid="uid://dk7luy58wud32" path="res://Script/Character/Skill/summoner_skill_manager.gd" id="5_skill"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_ixbgh"]
 radius = 25.0
@@ -28,5 +28,5 @@ position = Vector2(7, 12)
 [node name="summing_one" parent="." unique_id=795936435 instance=ExtResource("4_0rqnq")]
 position = Vector2(4, -193)
 
-[node name="Skill_Manager" type="Node" parent="."]
+[node name="Skill_Manager" type="Node" parent="." unique_id=1409799557]
 script = ExtResource("5_skill")

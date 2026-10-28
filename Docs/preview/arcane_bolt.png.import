@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://d2ky8mcgk5uww"
-path="res://.godot/imported/ycbs .png-fe1c3563f799504c03f7fc15d6eaa8d6.ctex"
+uid="uid://brv6xfqy1wukt"
+path="res://.godot/imported/arcane_bolt.png-5b6bf73162b59f3f6618abe5924fc59c.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://GameResource/Charater/bullet/ycbs .png"
-dest_files=["res://.godot/imported/ycbs .png-fe1c3563f799504c03f7fc15d6eaa8d6.ctex"]
+source_file="res://Docs/preview/arcane_bolt.png"
+dest_files=["res://.godot/imported/arcane_bolt.png-5b6bf73162b59f3f6618abe5924fc59c.ctex"]
 
 [params]
 

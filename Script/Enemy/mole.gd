@@ -4,7 +4,9 @@ extends "res://Script/Enemy/Enemy_model.gd"
 func _ready() -> void:
 	Max_HP = 500.0
 	HP = 500.0 + ((GameManager.GameProgress - 1) * 100)
+	Max_HP = maxf(Max_HP, HP)
 	speed = 100.0
+	defense = 20.0 + float(GameManager.GameProgress) * 6.0
 	damage = 1
 	_set_Label()
 
@@ -20,8 +22,8 @@ func _move(delta: float) -> void:
 
 
 func _Damage(amount: float) -> void:
-	# 地鼠有 5% 物理减伤
-	HP -= amount * 0.95
+	# 地鼠额外有 5% 的物理减伤（旧特性，保留）
+	HP -= _mitigate(amount) * 0.95
 	HP = snappedf(HP, 0.01)
 	_damage_effect()
 	if HP <= 0.0:

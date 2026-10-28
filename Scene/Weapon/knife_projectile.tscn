@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://c7y6u7ue6oach"]
 
 [ext_resource type="Script" uid="uid://bek7hlyy137jc" path="res://Script/Weapon/knife_projectile.gd" id="1_scr"]
-[ext_resource type="Texture2D" uid="uid://d2ky8mcgk5uww" path="res://GameResource/Charater/bullet/ycbs .png" id="2_44kh2"]
+[ext_resource type="Texture2D" uid="uid://d2ky8mcgk5uww" path="res://GameResource/Charater/bullet/ycbs.png" id="2_44kh2"]
 
 [sub_resource type="RectangleShape2D" id="shape"]
 size = Vector2(18, 64)

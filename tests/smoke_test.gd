@@ -29,6 +29,13 @@ func _run() -> void:
 	await _test_archer_rewards()
 	await _test_weapon_and_pause()
 	await _test_magician_weapon()
+	await _test_defense()
+	await _test_reward_refresh()
+	await _test_healing_particles()
+	await _test_stage2_rewards()
+	await _test_boss()
+	await _test_apple()
+	await _test_spawn_pressure()
 	await _test_tutorial()
 	await _test_reward_pool_guard()
 	await _test_summoner_skills()
@@ -96,14 +103,16 @@ func _test_archer_rewards() -> void:
 	GameManager._reward_detect(6)
 	check(is_equal_approx(GameManager.Bow.kill_line, 0.15), "奖励6 才加 kill_line")
 
-	var damage_before: float = GameManager.Bow.damage
+	var damage_before: float = GameManager.dmg_arrow()
 	GameManager._reward_detect(1)
-	check(is_equal_approx(GameManager.Bow.damage, damage_before + 10.0), "奖励1 提升箭矢伤害 +10")
+	check(GameManager.dmg_arrow() > damage_before, "奖励1 提升箭矢伤害（统一由攻击力派生）")
+	check(is_equal_approx(GameManager.dmg_arrow(), damage_before * 1.2), "奖励1 提供 +20% 攻击力")
 
 	# 19 淬锋之矢：流血层数与持续伤害
 	GameManager._reward_detect(19)
 	check(GameManager.archer_bleed_level == 1, "奖励19 解锁流血")
-	check(is_equal_approx(GameManager.archer_bleed_dps, 2.0), "奖励19 流血强度 2/s/层")
+	check(is_equal_approx(GameManager.dmg_bleed(), GameManager.character_damage() * GameManager.RATIO_BLEED),
+		"奖励19 流血强度随角色攻击力派生")
 	var bleed_target: Node2D = load("res://Scene/Enemy/slime.tscn").instantiate()
 	battle.add_child(bleed_target)
 	bleed_target.global_position = Vector2(600.0, 900.0)
@@ -135,6 +144,21 @@ func _test_archer_rewards() -> void:
 	check(Audio._streams.size() >= 10, "音效已生成（%d 个）" % Audio._streams.size())
 	check(Audio._bgm_player.stream != null and Audio._bgm_player.stream.get_length() > 1.0, "BGM 已生成")
 
+	# 狙击特效：滑入 → 摇摆 → 锁定 → 斩杀 → 淡出
+	GameManager.Exp_max = 1000000.0  # 防止测试过程中升级弹出奖励面板打断动画
+	GameManager.Bow.kill_line = 0.15
+	var snipe_target: Node2D = load("res://Scene/Enemy/slime.tscn").instantiate()
+	battle.add_child(snipe_target)
+	snipe_target.global_position = Vector2(400.0, 700.0)
+	await get_tree().process_frame
+	GameManager.Bow.call("_play_snipe", snipe_target, 0.0, true)
+	await get_tree().process_frame
+	var snipe_fx: Node = _find_by_script_suffix(battle, "sniping_target.gd")
+	check(snipe_fx != null, "狙击时生成了狙击准星特效")
+	await get_tree().create_timer(1.3).timeout
+	check(not is_instance_valid(snipe_fx), "狙击特效播放完自动消失")
+	check(not is_instance_valid(snipe_target), "狙击斩杀目标已死亡")
+
 
 # --- 暂停界面与通用武器（原初飞刀）-----------------------------------------
 
@@ -165,6 +189,8 @@ func _test_weapon_and_pause() -> void:
 	check(GameManager.weapon_node != null and is_instance_valid(GameManager.weapon_node), "武器节点已实例化")
 	check(GameManager.weapon_node.get_parent() == character, "武器挂在角色节点下（角色附近显示）")
 	check(GameManager.weapon_node.get_node_or_null("Icon") != null, "武器带显示图标")
+	check(GameManager.weapon_node.get("_icon") != null and (GameManager.weapon_node.get("_icon") as CanvasItem).visible,
+		"武器图标节点可见（换素材后也会自动跟随）")
 	check(GameManager.Rewards_pool.has(22) and GameManager.Rewards_pool.has(23), "武器基础升级进池")
 	check(GameManager.Rewards_pool.has(24) and GameManager.Rewards_pool.has(25), "武器技能进池")
 	check(GameManager.Rewards_pool.has(26), "弓箭手专属奖励进池")
@@ -174,7 +200,8 @@ func _test_weapon_and_pause() -> void:
 	var knife: Node2D = GameManager.weapon_node
 	var drop_attack_before: float = knife.get("damage")
 	GameManager._reward_detect(22)
-	check(is_equal_approx(float(knife.get("damage")), drop_attack_before + 15.0), "利刃：飞刀伤害 +15")
+	check(float(knife.get("damage")) > drop_attack_before, "利刃：飞刀伤害提升（倍率制）")
+	check(is_equal_approx(GameManager.weapon_ratio_bonus, 0.2), "利刃：倍率 +0.2")
 	var interval_before: float = knife.get("attack_interval")
 	GameManager._reward_detect(23)
 	check(float(knife.get("attack_interval")) < interval_before, "疾投：投掷间隔缩短")
@@ -191,12 +218,28 @@ func _test_weapon_and_pause() -> void:
 	check(float(knife.get("attack_interval")) < interval_before, "同调后飞刀比升级前更快")
 	check(GameManager.Bow != null and GameManager.Bow.get_interval() > 0.0, "弓箭射速可读")
 
+	# 瞄准转向时，武器图标要固定在角色身边（不能绕圈）
+	var icon = knife.get("_icon")
+	if icon != null:
+		knife.rotation = 0.0
+		await get_tree().process_frame
+		var icon_at_zero: Vector2 = (icon as Node2D).global_position
+		knife.rotation = -1.8
+		await get_tree().process_frame
+		var icon_at_turn: Vector2 = (icon as Node2D).global_position
+		check(icon_at_zero.distance_to(icon_at_turn) < 12.0,
+			"瞄准转向时武器图标不绕圈（位移 %.1f）" % icon_at_zero.distance_to(icon_at_turn))
+		knife.rotation = 0.0
+	else:
+		check(false, "武器图标节点缺失")
+
 	# 飞刀命中：普通伤害 + 最大生命百分比
 	var target: Node2D = load("res://Scene/Enemy/slime.tscn").instantiate()
 	battle.add_child(target)
 	target.global_position = Vector2(400.0, 820.0)
 	target.Max_HP = 1000.0
 	target.HP = 1000.0
+	target.defense = 0.0  # 本用例只验证“武器伤害 + 3% 最大生命”，先排除防御减免
 	await get_tree().process_frame
 	knife.call("fire_now")
 	await get_tree().process_frame
@@ -255,6 +298,615 @@ func _test_magician_weapon() -> void:
 		if script != null and str(script.resource_path).ends_with("knife_projectile.gd"):
 			child.queue_free()
 	await get_tree().process_frame
+
+
+# --- 防御值 / 穿透 ----------------------------------------------------------
+
+func _test_defense() -> void:
+	var target: Node2D = load("res://Scene/Enemy/slime.tscn").instantiate()
+	battle.add_child(target)
+	target.global_position = Vector2(120.0, 300.0)
+	target.Max_HP = 5000.0
+	target.HP = 5000.0
+	await get_tree().process_frame
+
+	# 无防御 → 全额
+	target.defense = 0.0
+	GameManager.penetration = 0.0
+	var before: float = target.HP
+	target._Damage(100.0)
+	check(is_equal_approx(before - target.HP, 100.0), "无防御时伤害全额生效")
+
+	# 防御 100 → 减免 50%
+	target.defense = 100.0
+	before = target.HP
+	target._Damage(100.0)
+	check(is_equal_approx(before - target.HP, 50.0),
+		"防御 100 时减免 50%%（实际掉落 %.2f）" % (before - target.HP))
+
+	# 穿透抵消防御
+	GameManager.penetration = 100.0
+	before = target.HP
+	target._Damage(100.0)
+	check(is_equal_approx(before - target.HP, 100.0), "穿透 ≥ 防御时恢复全额伤害")
+
+	# 减免上限 2/3
+	GameManager.penetration = 0.0
+	target.defense = 100000.0
+	before = target.HP
+	target._Damage(100.0)
+	var capped_drop: float = before - target.HP
+	check(absf(capped_drop - 100.0 / 3.0) < 0.05,
+		"防御再高减免也不超过 2/3（实际掉落 %.2f）" % capped_drop)
+
+	# 治疗不吃防御减免
+	target.defense = 0.0
+	target.HP = 10.0
+	target._Heal(50.0)
+	check(is_equal_approx(target.HP, 60.0), "治疗不受防御影响")
+
+	# 破甲奖励
+	GameManager.penetration = 0.0
+	check(GameManager.Reward_Asset_All.reward_list[29].name.contains("破甲"), "奖励表新增破甲词条")
+	GameManager._reward_detect(29)
+	check(is_equal_approx(GameManager.penetration, 8.0), "破甲奖励 +8 穿透")
+	target.queue_free()
+	await get_tree().process_frame
+
+
+# --- 奖励卡片单独刷新 -------------------------------------------------------
+
+func _test_reward_refresh() -> void:
+	GameManager.Rewards_pool = [1, 2, 3, 4, 5, 6, 7, 8]
+	var created: bool = GameManager.Reward_Creator._creat_reward()
+	check(created, "为刷新测试生成了奖励面板")
+	var panel = GameManager.Reward_Creator.get_child(0)
+	await get_tree().process_frame
+	var cards: Array = panel.get("_cards")
+	var buttons: Array = panel.get("_refresh_buttons")
+	check(cards.size() == 3 and buttons.size() == 3, "三张卡各带一个刷新按钮")
+
+	var first_id: int = int(cards[0].reward_context)
+	buttons[0].pressed.emit()
+	check(int(cards[0].reward_context) != first_id, "刷新后换成了别的奖励")
+	check(bool(buttons[0].disabled), "刷新按钮用过就置灰")
+	var after: int = int(cards[0].reward_context)
+	buttons[0].pressed.emit()
+	check(int(cards[0].reward_context) == after, "同一张卡只能刷新一次")
+
+	var ids: Array[int] = []
+	for card in cards:
+		ids.append(int(card.reward_context))
+	var duplicated := ids[0] == ids[1] or ids[1] == ids[2] or ids[0] == ids[2]
+	check(not duplicated, "刷新后三张卡不重复")
+
+	for slot in [1, 2]:
+		var old_id: int = int(cards[slot].reward_context)
+		buttons[slot].pressed.emit()
+		check(int(cards[slot].reward_context) != old_id, "第 %d 张卡也能单独刷新" % (slot + 1))
+
+	await _dismiss_reward_panel()
+	check(GameManager.Reward_Creator.get_child_count() == 0, "刷新测试后面板正常关闭")
+
+
+# --- 治疗粒子 / 全局粒子调度 ------------------------------------------------
+
+func _test_healing_particles() -> void:
+	ParticleDirector.reset()
+	check(ParticleDirector.active_count() == 0, "粒子调度初始为空")
+
+	# 强度函数：并发越多，单体越弱
+	var first := ParticleDirector.acquire()
+	check(is_equal_approx(first, 1.0), "第一个粒子对象满强度")
+	var second := ParticleDirector.acquire()
+	check(second < first, "同时播放的对象变多后强度下降")
+	for i in 10:
+		ParticleDirector.acquire()
+	var many := ParticleDirector.strength()
+	check(many < 0.4, "并发 12 个对象时强度明显下降（%.2f）" % many)
+	check(ParticleDirector.particle_count(many) >= 2, "强度再低也保留最少粒子数")
+	check(ParticleDirector.particle_count(1.0) == ParticleDirector.BASE_PARTICLES, "满强度时粒子数等于基准值")
+	ParticleDirector.reset()
+	check(ParticleDirector.active_count() == 0, "可以重置全局粒子统计")
+
+	# 名额上限跟着帧率动态调整
+	check(ParticleDirector.max_active() == 60, "默认名额上限 60")
+	ParticleDirector._apply_fps_sample(30.0)
+	check(ParticleDirector.max_active() < 60, "帧率吃紧时收紧名额")
+	for i in 8:
+		ParticleDirector._apply_fps_sample(30.0)
+	check(ParticleDirector.max_active() >= 18, "名额收紧有下限（实际 %d）" % ParticleDirector.max_active())
+	for i in 20:
+		ParticleDirector._apply_fps_sample(60.0)
+	check(ParticleDirector.max_active() == 96, "帧率健康时名额放宽到 96")
+	ParticleDirector.reset()
+
+	# 敌人被治疗 → 在该位置生成治疗粒子
+	var target: Node2D = load("res://Scene/Enemy/slime.tscn").instantiate()
+	battle.add_child(target)
+	target.global_position = Vector2(200.0, 620.0)
+	target.Max_HP = 100.0
+	target.HP = 10.0
+	await get_tree().process_frame
+	target._Heal(30.0)
+	await get_tree().process_frame
+	# 只找这个单位身上新生成的那一簇（场上可能有之前测试残留的粒子）
+	var burst: Node = null
+	for child in battle.get_children():
+		var script: Script = child.get_script()
+		if script != null and str(script.resource_path).ends_with("heal_burst.gd") \
+				and (child as Node2D).global_position.distance_to(target.global_position) < 8.0:
+			burst = child
+	check(burst != null, "敌人治疗时生成治疗粒子")
+	check(ParticleDirector.active_count() >= 1, "治疗粒子计入全局统计")
+	if burst != null:
+		var particles := burst.get_node_or_null("Particles") as GPUParticles2D
+		check(particles != null and particles.amount >= 2, "治疗粒子数量符合强度换算")
+		check((burst as Node2D).global_position.distance_to(target.global_position) < 8.0,
+			"治疗粒子出现在被治疗单位处")
+		# 粒子跟随单位：单位移动后粒子应该跟着走（粒子必须在局部空间才会真的跟）
+		check(particles != null and particles.local_coords, "治疗粒子使用局部空间（粒子会跟着单位走）")
+		target.global_position += Vector2(120.0, 0.0)
+		await get_tree().process_frame
+		check((burst as Node2D).global_position.distance_to(target.global_position) < 8.0,
+			"治疗粒子会跟随被治疗单位")
+	await get_tree().create_timer(1.2).timeout
+	check(not is_instance_valid(burst), "治疗粒子播完自动销毁")
+	check(ParticleDirector.active_count() == 0, "销毁后归还全局计数")
+	target.queue_free()
+	await get_tree().process_frame
+
+
+# --- 阶段二奖励：鹰眼 / 魔力解构 / 两个图腾 / 召唤物燃血 ----------------------
+
+func _test_stage2_rewards() -> void:
+	# 弓箭手：Lv9 解锁阶段二 + 鹰眼
+	await _make_battle(0)
+	GameManager.level = 9
+	GameManager._check_reward_stage_unlock()
+	check(GameManager.Rewards_pool.has(19), "Lv9 后弓箭手解锁淬锋之矢")
+	check(GameManager.Rewards_pool.has(30), "Lv9 后弓箭手解锁鹰眼")
+	check(GameManager.Reward_Asset_All.reward_list[30].name.contains("鹰眼"), "奖励表新增鹰眼词条")
+	GameManager.penetration = 0.0
+	GameManager._reward_detect(30)
+	check(is_equal_approx(GameManager.penetration_pct, 0.2), "鹰眼 1 级：20% 穿透")
+	GameManager._reward_detect(30)
+	check(is_equal_approx(GameManager.penetration_pct, 0.35), "鹰眼 2 级：35% 穿透")
+	GameManager._reward_detect(30)
+	check(is_equal_approx(GameManager.penetration_pct, 0.5), "鹰眼 3 级：50% 穿透（最高）")
+
+	var dummy: Node2D = load("res://Scene/Enemy/slime.tscn").instantiate()
+	battle.add_child(dummy)
+	dummy.global_position = Vector2(120.0, 300.0)
+	dummy.Max_HP = 5000.0
+	dummy.HP = 5000.0
+	dummy.defense = 100.0
+	await get_tree().process_frame
+	var hp_before: float = dummy.HP
+	dummy._Damage(100.0)
+	var drop: float = hp_before - dummy.HP
+	# 防御 100 → 百分比穿透 50% → 有效 50 → 减免 50/150 = 1/3 → 掉 66.67
+	check(absf(drop - 200.0 / 3.0) < 0.1, "鹰眼满级：防御 100 只减免 1/3（实际掉 %.2f）" % drop)
+	dummy.queue_free()
+	await get_tree().process_frame
+	GameManager.penetration_pct = 0.0
+
+	# 法师：魔力解构
+	await _make_battle(1)
+	GameManager.level = 9
+	GameManager._check_reward_stage_unlock()
+	check(GameManager.Rewards_pool.has(31), "Lv9 后法师解锁魔力解构")
+	check(GameManager.Reward_Asset_All.reward_list[31].name.contains("魔力解构"), "奖励表新增魔力解构词条")
+	GameManager._reward_detect(31)
+	check(GameManager.arcane_level == 1, "魔力解构 1 级")
+	var circle = GameManager.Magic_Cricle
+	check(circle != null, "法师魔法阵存在")
+	circle._fire_arcane()
+	await get_tree().process_frame
+	var bolt: Node = null
+	for child in circle.get_children():
+		var sc: Script = child.get_script()
+		if sc != null and str(sc.resource_path).ends_with("arcane_bolt.gd"):
+			bolt = child
+	check(bolt != null, "魔力解构丢出奥术魔弹")
+	check(bolt != null and is_equal_approx(float(bolt.damage), GameManager.dmg_arcane()),
+		"奥术魔弹伤害由角色攻击力派生（%.0f）" % GameManager.dmg_arcane())
+	var target: Node2D = load("res://Scene/Enemy/slime.tscn").instantiate()
+	battle.add_child(target)
+	target.global_position = Vector2(300.0, 600.0)
+	target.Max_HP = 5000.0
+	target.HP = 5000.0
+	target.defense = 100.0
+	await get_tree().process_frame
+	var target_hp: float = target.HP
+	bolt.call("_start_move")
+	bolt.call("_on_body_entered", target)
+	check(target.HP < target_hp, "奥术魔弹命中造成伤害")
+	check(target.defense_debuff > 0.0, "奥术魔弹命中降低目标防御")
+	check(target.effective_defense() < 100.0, "降防后有效防御下降")
+	target.queue_free()
+	await get_tree().process_frame
+
+	# 召唤师：两个图腾 + 燃血召唤物
+	await _make_battle(2)
+	GameManager.level = 9
+	GameManager._check_reward_stage_unlock()
+	check(GameManager.Rewards_pool.has(32) and GameManager.Rewards_pool.has(33), "Lv9 后召唤师解锁两个图腾")
+	GameManager._reward_detect(32)
+	GameManager._reward_detect(33)
+	check(GameManager.totem_curse_level == 1, "解离恶咒已解锁")
+	check(GameManager.totem_blessing_level == 1, "解脱恩赐已解锁")
+	var manager = GameManager.Summoner.get_node("Skill_Manager")
+
+	# 解离恶咒：敌人受伤 + 降防
+	var enemy: Node2D = load("res://Scene/Enemy/slime.tscn").instantiate()
+	battle.add_child(enemy)
+	enemy.global_position = Vector2(360.0, 800.0)
+	enemy.Max_HP = 5000.0
+	enemy.HP = 5000.0
+	enemy.defense = 100.0
+	await get_tree().process_frame
+	manager._place_curse_totem()
+	await get_tree().process_frame
+	var curse_totem: Node = _find_by_script_suffix(battle, "totem.gd")
+	check(curse_totem != null, "解离恶咒放下了图腾")
+	check(str(curse_totem.get("kind")) == "hurt", "解离恶咒图腾是伤害型")
+	var enemy_hp: float = enemy.HP
+	curse_totem.call("_apply_tick")
+	check(enemy.HP < enemy_hp, "图腾范围内敌人持续受伤")
+	check(enemy.defense_debuff > 0.0, "图腾范围内敌人防御被削弱")
+	check(curse_totem.global_position.distance_to(enemy.global_position) <= float(curse_totem.get("radius")),
+		"图腾放在目标身边且覆盖到它")
+
+	# 回归：怪少（都在远处）时也必须能放下图腾（原来会直接放弃）
+	curse_totem.queue_free()
+	await get_tree().process_frame
+	enemy.queue_free()
+	await get_tree().process_frame
+	var far_enemy: Node2D = load("res://Scene/Enemy/slime.tscn").instantiate()
+	battle.add_child(far_enemy)
+	far_enemy.global_position = Vector2(360.0, -120.0)  # 距离召唤师 >> 620px
+	await get_tree().process_frame
+	check(far_enemy.global_position.distance_to(GameManager.Summoner.global_position) > 620.0,
+		"远处的敌人不在 620px 范围内")
+	check(manager._place_curse_totem(), "只有一只远处敌人时也能放下图腾")
+	await get_tree().process_frame
+	var far_totem: Node = null
+	for child in battle.get_children():
+		var sc: Script = child.get_script()
+		if sc != null and str(sc.resource_path).ends_with("totem.gd") and str(child.get("kind")) == "hurt":
+			far_totem = child
+	check(far_totem != null, "图腾落到了那只远处敌人附近")
+	if far_totem != null:
+		# 落点会在场地边界（y ≥ -60）被夹住，所以允许一点偏差
+		check(far_totem.global_position.distance_to(far_enemy.global_position) < 150.0,
+			"图腾位置贴着那只远处的敌人（%.0f px）" % far_totem.global_position.distance_to(far_enemy.global_position))
+		far_totem.queue_free()
+		await get_tree().process_frame
+	far_enemy.queue_free()
+	await get_tree().process_frame
+
+	# 回归：场上一个敌人也没有时，退化成和解脱恩赐一样的随机落点
+	check(manager._place_curse_totem(), "场上没有敌人时也能放下图腾（随机落点）")
+	await get_tree().process_frame
+	var lone_totem: Node = null
+	for child in battle.get_children():
+		var sc: Script = child.get_script()
+		if sc != null and str(sc.resource_path).ends_with("totem.gd"):
+			lone_totem = child
+	check(lone_totem != null, "空场时图腾确实生成")
+	if lone_totem != null:
+		lone_totem.queue_free()
+		await get_tree().process_frame
+
+	# 解脱恩赐：己方单位回血
+	var ally: Node2D = load("res://Scene/Character/weapon/summon_minion.tscn").instantiate()
+	battle.add_child(ally)
+	ally.global_position = Vector2(360.0, 700.0)
+	ally.hp = 10.0
+	await get_tree().process_frame
+	manager._place_blessing_totem()
+	await get_tree().process_frame
+	var bless_totem: Node = null
+	for child in battle.get_children():
+		var sc: Script = child.get_script()
+		if sc != null and str(sc.resource_path).ends_with("totem.gd") and str(child.get("kind")) == "heal":
+			bless_totem = child
+	check(bless_totem != null, "解脱恩赐放下了治疗图腾")
+	bless_totem.global_position = ally.global_position
+	var ally_hp: float = ally.hp
+	bless_totem.call("_apply_tick")
+	check(ally.hp > ally_hp, "治疗图腾范围内己方单位回血")
+
+	# 图腾到时间会消失
+	var totem_duration: float = float(bless_totem.get("duration"))
+	bless_totem.set("_age", totem_duration - 0.01)
+	bless_totem.call("_process", 0.05)
+	await get_tree().process_frame
+	check(not is_instance_valid(bless_totem), "图腾到时间自动消失")
+
+	# 召唤物燃血生存
+	var minion_scene: PackedScene = load("res://Scene/Character/weapon/summon_minion.tscn")
+	var minion: Node2D = minion_scene.instantiate()
+	battle.add_child(minion)
+	minion.setup(10.0, 100.0)
+	check(is_equal_approx(minion.drain_rate, 5.0), "燃血速率 = 血量/原寿命 × 50%")
+	var minion_hp: float = minion.hp
+	minion._physics_process(1.0)
+	check(minion.hp < minion_hp, "非攻击状态会流逝血量")
+	var remain_before: float = minion.remaining_life()
+	minion.hp = minion.max_hp * 0.2
+	check(minion.remaining_life() < remain_before, "剩余存活时间随血量下降")
+	check(minion.remaining_life() <= 100.0, "剩余存活时间不超过 100 秒上限")
+
+	# 快没命时透明度也不会低于 45%
+	minion.hp = 1.0
+	minion.set("age", 99.9)
+	minion._update_alpha()
+	var minion_sprite := minion.get_node("Sprite2D") as Sprite2D
+	check(minion_sprite.modulate.a >= 0.449, "召唤物透明度下限 45%%（实际 %.2f）" % minion_sprite.modulate.a)
+	minion.set("age", 0.0)
+
+	# 超过上限时优先删除剩余时间最少的
+	var weak: Node2D = minion_scene.instantiate()
+	battle.add_child(weak)
+	weak.setup(10.0, 100.0)
+	weak.hp = 20.0
+	var strong: Node2D = minion_scene.instantiate()
+	battle.add_child(strong)
+	strong.setup(10.0, 100.0)
+	strong.hp = 100.0
+	minion.hp = 100.0
+	await get_tree().process_frame
+	check(weak.remaining_life() < minion.remaining_life(), "血量少的剩余时间更短")
+	GameManager._evict_weakest_minion()
+	check(weak.is_queued_for_deletion(), "超过 99 只时优先删除剩余时间最少的")
+	check(not minion.is_queued_for_deletion() and not strong.is_queued_for_deletion(), "其余召唤物保留")
+
+	# 存在时间上限 100 秒
+	minion.set("age", 100.0)
+	minion.hp = minion.max_hp
+	minion._physics_process(0.1)
+	await get_tree().process_frame
+	check(not is_instance_valid(minion), "到达 100 秒存在上限后消失")
+
+	for leftover in [curse_totem, enemy, ally, strong]:
+		if leftover != null and is_instance_valid(leftover):
+			leftover.queue_free()
+	await get_tree().process_frame
+
+
+# --- BOSS：史莱姆王 ---------------------------------------------------------
+
+func _test_boss() -> void:
+	await _make_battle(0)
+
+	# 9 级之前不计时、不刷
+	GameManager.in_run = true
+	GameManager.level = 8
+	GameManager.GameProgress = 2
+	GameManager._boss_timer = 0.0
+	GameManager._tick_boss(9999.0)
+	await get_tree().process_frame
+	check(_find_by_script_suffix(battle, "boss_slime_king.gd") == null, "9 级前不刷 BOSS")
+
+	# 9 级后按「时间间隔」刷新（不再按波次台阶触发）
+	GameManager.level = 9
+	GameManager.GameProgress = 3
+	GameManager._boss_timer = 0.0
+	var boss_gap: float = GameManager.boss_interval()
+	check(boss_gap >= 42.0 and boss_gap <= 80.0, "BOSS 间隔由进度决定（%.0f 秒）" % boss_gap)
+	GameManager._tick_boss(boss_gap - 1.0)
+	await get_tree().process_frame
+	check(_find_by_script_suffix(battle, "boss_slime_king.gd") == null, "还没到间隔不刷 BOSS")
+	GameManager._tick_boss(2.0)
+	await get_tree().process_frame
+	var boss = _find_by_script_suffix(battle, "boss_slime_king.gd")
+	check(boss != null, "到间隔后刷出 BOSS")
+	check(not get_tree().get_nodes_in_group("bosses").is_empty(), "BOSS 注册到 bosses 分组")
+	check(boss != null and int(boss.damage) == 5, "史莱姆王对城墙伤害 5 点")
+	check(boss != null and boss.get_node_or_null("HP_Bar") is ProgressBar, "BOSS 血条用 ProgressBar")
+	check(boss != null and boss.get_node_or_null("Show_HP") == null, "BOSS 不显示血量数字")
+	check(boss != null and boss.get_node_or_null("Crown") != null, "BOSS 头上有皇冠")
+	var boss_hp_early: float = boss.Max_HP
+	var boss_def_early: float = boss.defense
+	var bar: ProgressBar = boss.get_node("HP_Bar")
+	check(is_equal_approx(bar.max_value, boss_hp_early), "血条上限等于 BOSS 血量")
+	boss._Damage(boss_hp_early * 0.25)
+	check(bar.value < bar.max_value, "受伤后血条按比例下降")
+	boss.queue_free()
+	await get_tree().process_frame
+
+	# 场上有 BOSS 时不会再刷第二只
+	var boss_dup = GameManager.BOSS_SCENES[0].instantiate()
+	battle.add_child(boss_dup)
+	await get_tree().process_frame
+	GameManager._boss_timer = 0.0
+	GameManager._tick_boss(9999.0)
+	await get_tree().process_frame
+	check(get_tree().get_nodes_in_group("bosses").size() == 1, "场上同时只有一只 BOSS")
+	boss_dup.queue_free()
+	await get_tree().process_frame
+
+	# 间隔随进度缩短，但有下限
+	var early_gap: float = GameManager.boss_interval()
+	GameManager.GameProgress = 7
+	var late_gap: float = GameManager.boss_interval()
+	check(late_gap < early_gap, "进度越高 BOSS 间隔越短（%.0f → %.0f 秒）" % [early_gap, late_gap])
+	GameManager.GameProgress = 40
+	check(GameManager.boss_interval() >= 42.0, "BOSS 间隔有下限，不会刷屏（%.0f 秒）" % GameManager.boss_interval())
+
+	# 间隔到点后会从 BOSS 列表里随机挑一只再刷
+	GameManager.level = 9
+	GameManager.GameProgress = 7
+	GameManager._boss_timer = 0.0
+	GameManager._tick_boss(GameManager.boss_interval() + 1.0)
+	await get_tree().process_frame
+	var boss7 = _find_by_script_suffix(battle, "boss_slime_king.gd")
+	check(boss7 != null, "间隔到点后再刷一只 BOSS")
+	check(boss7.Max_HP > boss_hp_early and boss7.defense > boss_def_early, "BOSS 血量与防御随进度成长")
+
+	# 击杀奖励：大量经验 + 城墙上限 + 炸出 3~5 只史莱姆
+	GameManager.Exp_max = 1000000.0  # 本段只验证掉经验，不让等级奖励弹板打断
+	var exp_before: float = GameManager.Exp_cur
+	var wall_max_before: int = GameManager.Wall_Max
+	var death_pos: Vector2 = boss7.global_position
+	var known_ids := {}
+	for enemy_node in get_tree().get_nodes_in_group("enemies"):
+		known_ids[enemy_node.get_instance_id()] = true
+	boss7._Damage(999999.0)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	check(GameManager.Wall_Max == wall_max_before + 1, "击杀 BOSS 提升城墙血量上限（%d）" % GameManager.Wall_Max)
+	check(GameManager.Wall_Health > 0, "击杀 BOSS 后城墙仍可用")
+	check(GameManager.Exp_cur > exp_before, "击杀 BOSS 掉落大量经验（%.0f）" % GameManager.Exp_cur)
+	var spawned := 0
+	for enemy_node in get_tree().get_nodes_in_group("enemies"):
+		if known_ids.has(enemy_node.get_instance_id()):
+			continue
+		if (enemy_node as Node2D).global_position.distance_to(death_pos) < 220.0:
+			spawned += 1
+	check(spawned >= 3 and spawned <= 5, "BOSS 死后在周围炸出 3~5 只史莱姆（实际 %d）" % spawned)
+
+	# BOSS 撞墙扣 5 点耐久（不 await，避免它自己的 _physics_process 先把墙撞了）
+	GameManager.Wall_Health = 10
+	GameManager.Wall_Max = 10
+	var boss_wall = load("res://Scene/Enemy/boss_slime_king.tscn").instantiate()
+	battle.add_child(boss_wall)
+	boss_wall.global_position = Vector2(360.0, 1300.0)
+	boss_wall._detect_self()
+	check(GameManager.Wall_Health == 5, "BOSS 撞墙扣 5 点耐久（实际 %d）" % GameManager.Wall_Health)
+	GameManager.Wall_Max = GameManager.WALL_MAX_HEALTH
+	GameManager.Wall_Health = GameManager.WALL_MAX_HEALTH
+	await get_tree().process_frame
+
+	# BOSS 专属减伤①：比例伤害只吃 25%
+	var boss_pct = load("res://Scene/Enemy/boss_slime_king.tscn").instantiate()
+	battle.add_child(boss_pct)
+	boss_pct.global_position = Vector2(300.0, 600.0)
+	await get_tree().process_frame
+	check(is_equal_approx(boss_pct.percent_resist, 0.75), "BOSS 有 75% 比例伤害抗性")
+	var boss_max: float = boss_pct.Max_HP
+	boss_pct.defense = 0.0  # 单看比例抗性，先排除防御
+	var boss_pct_hp: float = boss_pct.HP
+	boss_pct._damage_percent_hp(0.10)
+	var boss_pct_drop: float = boss_pct_hp - boss_pct.HP
+	check(absf(boss_pct_drop - boss_max * 0.10 * 0.25) < 2.0,
+		"10%% 最大生命的比例伤害对 BOSS 只剩 1/4（实际 %.0f / %.0f）" % [boss_pct_drop, boss_max])
+
+	# 普通怪的比例伤害完全不受影响
+	var slime_pct: Node2D = load("res://Scene/Enemy/slime.tscn").instantiate()
+	battle.add_child(slime_pct)
+	slime_pct.global_position = Vector2(520.0, 600.0)
+	await get_tree().process_frame
+	slime_pct.defense = 0.0
+	slime_pct.Max_HP = 1000.0
+	slime_pct.HP = 1000.0
+	slime_pct._damage_percent_hp(0.10)
+	check(absf((1000.0 - slime_pct.HP) - 100.0) < 1.0, "普通怪的比例伤害照旧（掉 100）")
+
+	# BOSS 专属减伤②：斩杀对 BOSS 只有 10% 效果，不再秒杀
+	var boss_exec_hp: float = boss_pct.HP
+	boss_pct._execute()
+	check(is_instance_valid(boss_pct) and boss_pct.HP > 0.0, "BOSS 不会被斩杀直接秒掉")
+	var exec_drop: float = boss_exec_hp - boss_pct.HP
+	check(absf(exec_drop - boss_max * 0.10) < 2.0,
+		"BOSS 的斩杀只有 10%% 效果（实际掉落 %.0f / %.0f）" % [exec_drop, boss_max])
+
+	# 普通怪斩杀仍然是秒杀
+	slime_pct._execute()
+	await get_tree().process_frame
+	check(not is_instance_valid(slime_pct), "普通怪斩杀仍是秒杀")
+	boss_pct.queue_free()
+	await get_tree().process_frame
+
+
+# --- 滚动苹果 ---------------------------------------------------------------
+
+func _test_apple() -> void:
+	await _make_battle(0)
+	GameManager.in_run = true
+
+	# 6 级前不刷
+	GameManager.level = 5
+	GameManager._apple_timer = 0.0
+	GameManager._tick_apple(999.0)
+	await get_tree().process_frame
+	check(_find_by_script_suffix(battle, "scrolling_apple.gd") == null, "6 级前不刷滚动苹果")
+
+	# 6 级后少量、10 级后大量
+	GameManager.level = 6
+	check(is_equal_approx(GameManager.apple_interval(), 5.0), "6 级后苹果少量出现（间隔 5 秒）")
+	GameManager.level = 10
+	check(is_equal_approx(GameManager.apple_interval(), 1.6), "10 级后苹果大量出现（间隔 1.6 秒）")
+
+	GameManager._apple_timer = 0.0
+	GameManager._tick_apple(0.1)
+	await get_tree().process_frame
+	var apple = _find_by_script_suffix(battle, "scrolling_apple.gd")
+	check(apple != null, "到间隔后刷出滚动苹果")
+	check(apple != null and get_tree().get_nodes_in_group("enemies").has(apple), "苹果是普通敌人（进 enemies 分组）")
+	check(apple != null and apple.angle_deg >= 30.0 and apple.angle_deg <= 60.0,
+		"滚动角度在 30°~60° 之间（%.0f°）" % apple.angle_deg)
+
+	# 基础速度略快于其他敌人
+	var slime_cmp: Node2D = load("res://Scene/Enemy/slime.tscn").instantiate()
+	battle.add_child(slime_cmp)
+	await get_tree().process_frame
+	check(apple.speed > slime_cmp.speed, "苹果基础速度略快于史莱姆（%s / %s）" % [str(apple.speed), str(slime_cmp.speed)])
+	slime_cmp.queue_free()
+
+	# 登场加速：0~1 秒 +100%，1~2 秒衰减，之后恢复
+	apple.set("_spawn_time", 0.5)
+	check(is_equal_approx(apple.current_boost(), 2.0), "登场瞬间 +100% 速度")
+	apple.set("_spawn_time", 1.5)
+	var mid_boost: float = apple.current_boost()
+	check(mid_boost > 1.0 and mid_boost < 2.0, "1 秒后加速开始衰减（x%.2f）" % mid_boost)
+	apple.set("_spawn_time", 2.5)
+	check(is_equal_approx(apple.current_boost(), 1.0), "2 秒后加速完全消失")
+
+	# 贴图一直旋转
+	var apple_sprite: AnimatedSprite2D = apple.get_node("AnimatedSprite2D")
+	var rot_before: float = apple_sprite.rotation
+	apple.set("_spawn_time", 5.0)
+	apple._physics_process(0.1)
+	check(absf(apple_sprite.rotation - rot_before) > 0.01, "苹果贴图持续旋转")
+
+	# 撞左右边界反弹并换角度
+	var old_sign: float = apple.dir_sign
+	apple.global_position = Vector2(652.0, 600.0)
+	apple._bounce_if_needed()
+	check(apple.dir_sign != old_sign, "撞边界后横向方向反弹")
+	check(apple.angle_deg >= 30.0 and apple.angle_deg <= 60.0, "反弹后角度重新落在 30°~60°")
+	check(apple.global_position.x < 652.0, "反弹后回到场地内")
+
+	# 斜着滚动：横纵坐标同时在变
+	apple.global_position = Vector2(360.0, 700.0)
+	apple.set("_spawn_time", 5.0)
+	var pos_before: Vector2 = apple.global_position
+	apple._physics_process(0.5)
+	check(absf(apple.global_position.x - pos_before.x) > 0.01, "苹果是斜着滚动的（横向也在变）")
+	check(apple.global_position.y > pos_before.y, "同时继续向下推进")
+
+	apple.queue_free()
+	await get_tree().process_frame
+
+
+# --- 12 级后的出怪量 --------------------------------------------------------
+
+func _test_spawn_pressure() -> void:
+	await _make_battle(0)
+	var spawner: Node = _find_by_script_suffix(battle, "enemies_creator_creator.gd")
+	check(spawner != null, "战斗场景带刷怪器")
+	if spawner == null:
+		return
+	var before: int = spawner.get_child_count()
+	spawner.call("_creat_new_creator", 4)
+	var after4: int = spawner.get_child_count()
+	check(after4 - before == 2, "12 级（progress 4）额外增加 2 条刷怪线（%d）" % (after4 - before))
+	spawner.call("_creat_new_creator", 6)
+	var after6: int = spawner.get_child_count()
+	check(after6 - after4 == 3, "更后期（progress 6）额外增加 3 条刷怪线（%d）" % (after6 - after4))
 
 
 # --- 新手引导 ---------------------------------------------------------------
@@ -359,8 +1011,8 @@ func _test_summoner_skills() -> void:
 	await _make_battle(2)
 	check(GameManager.Summoner != null, "召唤师已注册到 GameManager")
 	var unit: Node = GameManager.Summoner.get_node("summing_one")
-	check(is_equal_approx(unit.damage, 5.0), "召唤物基础伤害 5")
-	check(GameManager.Rewards_pool.has(14), "召唤师池子里有「提升召唤物伤害」")
+	check(is_equal_approx(unit.damage, GameManager.dmg_summoner_main()), "召唤物伤害由角色攻击力派生")
+	check(GameManager.Rewards_pool.has(14), "召唤师池子里有「提升攻击力」")
 	check(GameManager.Rewards_pool.has(20), "召唤师池子里有「提升召唤物攻速」")
 	check(GameManager.Reward_Asset_All.reward_list[20].name.contains("攻速"),
 		"奖励表新增了攻速词条（%s）" % GameManager.Reward_Asset_All.reward_list[20].name)
@@ -374,8 +1026,17 @@ func _test_summoner_skills() -> void:
 	GameManager._reward_detect(20)
 	check(GameManager.summon_attack_interval < 0.425, "奖励20 可叠加")
 
+	var cd_before_reward14: float = GameManager.character_damage()
 	GameManager._reward_detect(14)
-	check(is_equal_approx(unit.damage, 10.0), "奖励14 召唤物伤害 +5")
+	GameManager.refresh_summons()
+	check(GameManager.character_damage() > cd_before_reward14, "奖励14 提升召唤师攻击力")
+	check(is_equal_approx(unit.damage, GameManager.dmg_summoner_main()), "主召唤物伤害跟着召唤师攻击力走")
+	check(is_equal_approx(GameManager.dmg_summoner_main(),
+		GameManager.character_damage() * GameManager.RATIO_SUMMONER_MAIN),
+		"主召唤物 = 召唤师攻击力 × 0.5（没有独立加成）")
+	check(is_equal_approx(GameManager.dmg_minion(),
+		GameManager.character_damage() * GameManager.RATIO_MINION),
+		"临时单位也只看召唤师攻击力")
 
 	GameManager._reward_detect(15)
 	await get_tree().process_frame
@@ -411,7 +1072,8 @@ func _test_summoner_skills() -> void:
 
 	# 临时单位：血量 / 索敌移动 / 随机游荡 / 被攻击 / 被治疗 / 攻速继承
 	var minion: Node2D = get_tree().get_nodes_in_group("summon_minions")[0]
-	check(minion.max_hp > 0.0 and is_equal_approx(minion.hp, minion.max_hp), "临时单位有血量")
+	check(minion.max_hp > 0.0 and minion.hp > 0.0 and minion.hp <= minion.max_hp + 0.01,
+		"临时单位有血量（%s / %s）" % [str(snappedf(minion.hp, 0.1)), str(minion.max_hp)])
 	check(is_equal_approx(minion.attack_interval, GameManager.summon_attack_interval * 2.0),
 		"临时单位攻速为本体的 50%%（间隔 %s，本体 %s）" % [
 			str(minion.attack_interval), str(GameManager.summon_attack_interval),
@@ -445,7 +1107,15 @@ func _test_summoner_skills() -> void:
 	check(minion.hp < minion_hp_before, "敌人会攻击附近的召唤单位")
 	var attacker_pos: Vector2 = attacker.global_position
 	attacker._walk(1.0)
-	check(attacker.global_position.distance_to(attacker_pos) < 1.0, "被召唤单位缠住的敌人会停下")
+	var grappled_move: float = attacker.global_position.distance_to(attacker_pos)
+	check(grappled_move > 1.0, "被召唤单位缠住的敌人仍会前进（不再堵住出生点）")
+	# 松开缠绕后同样一次 _walk 的位移应该正好是缠绕时的两倍 → 独立 50% 乘区
+	attacker._ally_target = null
+	var free_pos: Vector2 = attacker.global_position
+	attacker._walk(1.0)
+	var free_move: float = attacker.global_position.distance_to(free_pos)
+	check(free_move > 1.0 and absf(free_move / maxf(grappled_move, 0.001) - 2.0) < 0.15,
+		"缠绕减速是独立的 50%% 乘区（缠绕 %.2f / 正常 %.2f）" % [grappled_move, free_move])
 	attacker.queue_free()
 	minion._heal(9999.0)
 	check(is_equal_approx(minion.hp, minion.max_hp), "临时单位能被治疗满血")
@@ -490,6 +1160,17 @@ func _test_summoner_skills() -> void:
 	check(summon_unit.is_alive() and is_equal_approx(summon_unit.hp, summon_unit.max_hp), "主召唤物 4 秒后满血复活")
 	await get_tree().process_frame
 
+	# 召唤物被治疗也会生成治疗粒子
+	ParticleDirector.reset()
+	summon_unit.hp = 10.0
+	summon_unit._heal(20.0)
+	await get_tree().process_frame
+	var summon_heal_fx: Node = _find_by_script_suffix(battle, "heal_burst.gd")
+	check(summon_heal_fx != null, "召唤物被治疗时生成治疗粒子")
+	await get_tree().create_timer(1.2).timeout
+	ParticleDirector.reset()
+	await get_tree().process_frame
+
 	# 18 负向幻觉：随机传送/抹除 + 幻象闪动
 	GameManager._reward_detect(18)
 	var target: Node2D = load("res://Scene/Enemy/slime.tscn").instantiate()
@@ -527,6 +1208,42 @@ func _test_summoner_skills() -> void:
 		var script: Script = child.get_script()
 		if script != null and str(script.resource_path).ends_with("knife_projectile.gd"):
 			child.queue_free()
+	# 粒子名额紧张时：优先给离玩家最近的召唤物
+	ParticleDirector.reset()
+	for old in get_tree().get_nodes_in_group("summon_minions"):
+		old.queue_free()
+	await get_tree().process_frame
+	var player := get_tree().get_first_node_in_group("character") as Node2D
+	var main_unit := GameManager.Summoner.get_node("summing_one") as Node2D
+	main_unit.global_position = Vector2(620.0, 240.0)
+	var minion_scene: PackedScene = load("res://Scene/Character/weapon/summon_minion.tscn")
+	var near_ally: Node2D = minion_scene.instantiate()
+	var far_ally: Node2D = minion_scene.instantiate()
+	battle.add_child(near_ally)
+	battle.add_child(far_ally)
+	near_ally.global_position = player.global_position + Vector2(60.0, 0.0)
+	far_ally.global_position = player.global_position + Vector2(460.0, 0.0)
+	near_ally.hp = 10.0
+	far_ally.hp = 10.0
+	ParticleDirector.set("_cap", 1)
+	manager._heal_allies()
+	await get_tree().process_frame
+	var near_fx: Node = null
+	var far_fx: Node = null
+	for child in battle.get_children():
+		var script: Script = child.get_script()
+		if script == null or not str(script.resource_path).ends_with("heal_burst.gd"):
+			continue
+		var spot: Vector2 = (child as Node2D).global_position
+		if spot.distance_to(near_ally.global_position) < 20.0:
+			near_fx = child
+		elif spot.distance_to(far_ally.global_position) < 20.0:
+			far_fx = child
+	check(near_fx != null, "名额紧张时优先给离玩家最近的召唤物")
+	check(far_fx == null, "名额用完后远处的召唤物分不到粒子")
+	ParticleDirector.reset()
+	near_ally.queue_free()
+	far_ally.queue_free()
 	await get_tree().process_frame
 
 
@@ -539,6 +1256,7 @@ func _test_damage_heal() -> void:
 	await get_tree().process_frame
 	check(is_equal_approx(slime.HP, 100.0) and is_equal_approx(slime.Max_HP, 100.0), "史莱姆初始 100/100")
 
+	slime.defense = 0.0  # 本用例只验证伤害/治疗分离，先排除防御减免
 	slime._Damage(30.0)
 	check(is_equal_approx(slime.HP, 70.0), "伤害只走 _Damage")
 

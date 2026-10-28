@@ -32,4 +32,4 @@ func _on_life_timer_timeout() -> void:
 
 func _on_body_entered(body: Node2D) -> void:
 	if body.has_method("_Heal"):
-		body._Heal(25.0 + float(GameManager.GameProgress) * 5.0, true)
+		body._Heal(15.0 + float(GameManager.GameProgress) * 3.0, true)

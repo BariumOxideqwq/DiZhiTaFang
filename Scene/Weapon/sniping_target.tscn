@@ -1,0 +1,12 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://Script/Weapon/sniping_target.gd" id="1_scr"]
+[ext_resource type="Texture2D" uid="uid://bd43wtwuuyk3x" path="res://GameResource/effect/sniping_target.png" id="2_tex"]
+
+[node name="SnipingTarget" type="Node2D"]
+z_index = 6
+script = ExtResource("1_scr")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("2_tex")

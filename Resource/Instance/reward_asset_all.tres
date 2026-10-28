@@ -12,7 +12,7 @@ metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
 [sub_resource type="Resource" id="Resource_t5flk"]
 script = ExtResource("1_pfdmg")
 name = "（弓箭手）提升箭矢伤害"
-context = "提升箭矢伤害，上限为INT_MAX"
+context = "提升角色攻击力 20%（箭矢、飞刀等所有伤害一起提高）"
 metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
 
 [sub_resource type="Resource" id="Resource_twhg6"]
@@ -65,7 +65,7 @@ metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
 [sub_resource type="Resource" id="Resource_2cexh"]
 script = ExtResource("1_pfdmg")
 name = "（法师）提升伤害"
-context = "提升十点伤害"
+context = "提升角色攻击力 20%（魔法弹与所有法术一起提高）"
 metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
 
 [sub_resource type="Resource" id="Resource_y0rtj"]
@@ -100,8 +100,8 @@ metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
 
 [sub_resource type="Resource" id="Resource_5n28g"]
 script = ExtResource("1_pfdmg")
-name = "（召唤师）提升伤害"
-context = "提升召唤物一号的伤害"
+name = "（召唤师）提升攻击力"
+context = "召唤师攻击力 +30%：主召唤物与临时单位的伤害一起提高"
 metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
 
 [sub_resource type="Resource" id="Resource_ostif"]
@@ -151,7 +151,7 @@ metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
 [sub_resource type="Resource" id="Resource_wpn_dmg"]
 script = ExtResource("1_pfdmg")
 name = "（原初飞刀）利刃"
-context = "飞刀伤害提升15点"
+context = "飞刀伤害倍率 +0.2（按角色攻击力计算）"
 metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
 
 [sub_resource type="Resource" id="Resource_wpn_spd"]
@@ -190,7 +190,37 @@ name = "（召唤师）永葬秘法"
 context = "每隔一段时间，若此岸渡蚀存在，则从裂隙位置向四周连续投掷飞刀3秒"
 metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
 
+[sub_resource type="Resource" id="Resource_pen"]
+script = ExtResource("1_pfdmg")
+name = "（通用）破甲"
+context = "穿透 +8：抵消怪物的防御减免（对高防御的怪物收益更高）"
+metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
+
+[sub_resource type="Resource" id="Resource_eye"]
+script = ExtResource("1_pfdmg")
+name = "（弓箭手）鹰眼"
+context = "获得百分比穿透（20%/35%/50%）：按比例无视目标防御"
+metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
+
+[sub_resource type="Resource" id="Resource_arcane"]
+script = ExtResource("1_pfdmg")
+name = "（法师）魔力解构"
+context = "周期性凝聚魔力，朝前方丢出巨大的奥术魔弹：造成大量伤害，并降低命中单位50%左右防御"
+metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
+
+[sub_resource type="Resource" id="Resource_totem_curse"]
+script = ExtResource("1_pfdmg")
+name = "（召唤师）解离恶咒"
+context = "在自身周围随机敌人身边放下图腾：范围内敌人持续受伤，且防御被持续削弱"
+metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
+
+[sub_resource type="Resource" id="Resource_totem_bless"]
+script = ExtResource("1_pfdmg")
+name = "（召唤师）解脱恩赐"
+context = "在场上随机位置放下图腾（多落在中间区域）：范围内己方单位持续恢复生命"
+metadata/_custom_type_script = "uid://dy3c0eqwhu8a"
+
 [resource]
 script = ExtResource("2_twhg6")
-reward_list = Array[ExtResource("1_pfdmg")]([SubResource("Resource_pfdmg"), SubResource("Resource_t5flk"), SubResource("Resource_twhg6"), SubResource("Resource_yvpo3"), SubResource("Resource_3jm2q"), SubResource("Resource_s1foa"), SubResource("Resource_w2gux"), SubResource("Resource_qlqwh"), SubResource("Resource_2cexh"), SubResource("Resource_y0rtj"), SubResource("Resource_wshwn"), SubResource("Resource_1wb2c"), SubResource("Resource_oyhuo"), SubResource("Resource_1cqc6"), SubResource("Resource_5n28g"), SubResource("Resource_ostif"), SubResource("Resource_gp7aw"), SubResource("Resource_wltfh"), SubResource("Resource_sg3ll"), SubResource("Resource_soir6"), SubResource("Resource_atspd"), SubResource("Resource_wpn_acquire"), SubResource("Resource_wpn_dmg"), SubResource("Resource_wpn_spd"), SubResource("Resource_wpn_power"), SubResource("Resource_wpn_echo"), SubResource("Resource_wpn_archer"), SubResource("Resource_wpn_mage"), SubResource("Resource_wpn_summoner")])
+reward_list = Array[ExtResource("1_pfdmg")]([SubResource("Resource_pfdmg"), SubResource("Resource_t5flk"), SubResource("Resource_twhg6"), SubResource("Resource_yvpo3"), SubResource("Resource_3jm2q"), SubResource("Resource_s1foa"), SubResource("Resource_w2gux"), SubResource("Resource_qlqwh"), SubResource("Resource_2cexh"), SubResource("Resource_y0rtj"), SubResource("Resource_wshwn"), SubResource("Resource_1wb2c"), SubResource("Resource_oyhuo"), SubResource("Resource_1cqc6"), SubResource("Resource_5n28g"), SubResource("Resource_ostif"), SubResource("Resource_gp7aw"), SubResource("Resource_wltfh"), SubResource("Resource_sg3ll"), SubResource("Resource_soir6"), SubResource("Resource_atspd"), SubResource("Resource_wpn_acquire"), SubResource("Resource_wpn_dmg"), SubResource("Resource_wpn_spd"), SubResource("Resource_wpn_power"), SubResource("Resource_wpn_echo"), SubResource("Resource_wpn_archer"), SubResource("Resource_wpn_mage"), SubResource("Resource_wpn_summoner"), SubResource("Resource_pen"), SubResource("Resource_eye"), SubResource("Resource_arcane"), SubResource("Resource_totem_curse"), SubResource("Resource_totem_bless")])
 metadata/_custom_type_script = "uid://bsa61j6xq8rmj"

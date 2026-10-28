@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://bd6h7on5aypqd" path="res://Script/Weapon/primordial_knife.gd" id="1_scr"]
 [ext_resource type="Texture2D" uid="uid://cw84i0d5jo6e2" path="res://GameResource/Charater/row.png" id="2_tex"]
-[ext_resource type="Texture2D" uid="uid://d2ky8mcgk5uww" path="res://GameResource/Charater/bullet/ycbs .png" id="3_ve12k"]
+[ext_resource type="Texture2D" uid="uid://d2ky8mcgk5uww" path="res://GameResource/Charater/bullet/ycbs.png" id="3_ve12k"]
 
 [node name="PrimordialKnife" type="Node2D" unique_id=285978233]
 script = ExtResource("1_scr")

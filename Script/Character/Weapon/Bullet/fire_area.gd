@@ -35,4 +35,7 @@ func _on_life_timer_timeout() -> void:
 func _on_body_entered(body: Node2D) -> void:
 	if body.has_method("_Damage"):
 		body._Damage(damage)
-		body._Damage(0.15 * body.Max_HP)
+		if body.has_method("_damage_percent_hp"):
+			body._damage_percent_hp(0.15)
+		else:
+			body._Damage(0.15 * body.Max_HP)

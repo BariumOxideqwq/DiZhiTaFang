@@ -13,7 +13,11 @@ func _ready() -> void:
 
 
 func _change_wall_hp() -> void:
-	$Show_Box_01/show_Wall_HP.text = "城墙耐久度:" + str(GameManager.Wall_Health)
+	# 城墙上限被 BOSS 奖励抬高后，同时显示「当前/上限」
+	if GameManager.Wall_Max > GameManager.WALL_MAX_HEALTH:
+		$Show_Box_01/show_Wall_HP.text = "城墙耐久度:%d/%d" % [GameManager.Wall_Health, GameManager.Wall_Max]
+	else:
+		$Show_Box_01/show_Wall_HP.text = "城墙耐久度:" + str(GameManager.Wall_Health)
 
 
 func _change_exp_ui() -> void:

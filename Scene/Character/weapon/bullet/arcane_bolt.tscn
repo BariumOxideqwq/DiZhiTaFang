@@ -1,0 +1,22 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://Script/Character/Weapon/Bullet/arcane_bolt.gd" id="1_scr"]
+[ext_resource type="Texture2D" uid="uid://d4k51shd2eshx" path="res://GameResource/Charater/bullet/magic_ball.png" id="2_tex"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_arcane"]
+radius = 96.0
+
+[node name="ArcaneBolt" type="Area2D"]
+top_level = true
+z_index = 4
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_scr")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+modulate = Color(0.78, 0.62, 1, 1)
+scale = Vector2(7, 7)
+texture = ExtResource("2_tex")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_arcane")

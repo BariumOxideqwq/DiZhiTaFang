@@ -20,6 +20,8 @@ config/icon="res://icon.svg"
 
 GameManager="*uid://cnhmltihpj73s"
 Audio="*res://Script/Audio/audio_manager.gd"
+ScreenSet="*uid://33a20cva17ag"
+ParticleDirector="*res://Script/Particle/particle_director.gd"
 
 [display]
 
@@ -28,7 +30,6 @@ window/size/viewport_height=1600
 window/size/mode=2
 window/size/resizable=false
 window/stretch/mode="canvas_items"
-window/stretch/aspect="keep_width"
 window/handheld/orientation=1
 
 [physics]
